@@ -6,122 +6,210 @@
   <title>Yueying (Celeste) Huang</title>
   <style>
     body {
-      background-color: #000; 
-      color: #fff;          
+      background-color: #000; /* Black background */
+      color: #fff;           /* Default white text */
       font-family: Arial, sans-serif;
-      margin: 40px;
-      padding: 20px;
+      margin: 0;
+      padding: 0;
+    }
+    /* Navigation Bar */
+    nav {
+      background-color: #000;
+      padding: 10px 20px;
+      position: fixed;
+      width: 100%;
+      top: 0;
+      left: 0;
+      z-index: 100;
+    }
+    nav ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+    }
+    nav li {
+      margin: 0 15px;
+    }
+    nav a {
+      text-decoration: none;
+      color: #fff;
+      font-weight: bold;
+    }
+    nav a:hover {
+      color: #ccc;
+    }
+    /* Hero Section */
+    .hero {
+      padding: 100px 20px 50px; /* Extra top padding to offset fixed nav */
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: 3em;
+      color: #00008B; /* Dark blue for your name */
+      margin-bottom: 10px;
+    }
+    .hero p {
+      font-size: 1.2em;
+      margin: 0;
+    }
+    /* Section Styling */
+    section {
+      padding: 50px 20px;
       max-width: 800px;
       margin: auto;
     }
-    header h1 {
-      color: #00008B; 
-    }
-    .section {
-      margin-bottom: 30px;
-    }
-
     .education {
-      color: #00008B;
+      color: #00008B; /* Dark blue text for Education section */
+    }
+    h2 {
+      border-bottom: 1px solid #444;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+    h3 {
+      margin-top: 30px;
+      margin-bottom: 10px;
+    }
+    ul {
+      list-style: none;
+      padding-left: 0;
+    }
+    li {
+      margin-bottom: 10px;
     }
     a {
+      color: #fff;
       text-decoration: none;
-      color: #fff; 
     }
     a:hover {
-      text-decoration: underline;
       color: #ccc;
+    }
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 20px;
+      border-top: 1px solid #444;
+      margin-top: 50px;
     }
   </style>
 </head>
 <body>
-  <header>
+  <!-- Fixed Navigation Bar -->
+  <nav>
+    <ul>
+      <li><a href="#about">About</a></li>
+      <li><a href="#education">Education</a></li>
+      <li><a href="#experience">Experience</a></li>
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="#skills">Skills</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <!-- Hero / About Section -->
+  <div class="hero" id="about">
     <h1>Yueying (Celeste) Huang</h1>
+    <p>Data-driven professional combining analytical insights with financial expertise.</p>
+  </div>
+
+  <!-- Education Section -->
+  <section id="education" class="education">
+    <h2>Education</h2>
+    <p>
+      <strong>University of Illinois Urbana-Champaign</strong> - Master of Business Analytics (GPA: 3.97/4.0)<br>
+      Aug. 2024 – May 2025 | Champaign, USA
+    </p>
+    <p>
+      <strong>University of Bristol</strong> - Exchange Student in Accounting and Finance<br>
+      Sep. 2023 – May 2024 | Bristol, UK
+    </p>
+    <p>
+      <strong>Jiangxi University of Finance and Economics</strong> - Bachelor of Finance (Top 15%)<br>
+      Sep. 2020 – Jul. 2024 | Nanchang, China | Minor: Applied Statistics
+    </p>
+  </section>
+
+  <!-- Experience Section -->
+  <section id="experience">
+    <h2>Experience</h2>
+    <h3>CNeutral | Financial Research Intern (Aug. 2024 – Present)</h3>
+    <ul>
+      <li>Developed a machine learning-based portfolio model integrating Bloomberg financial data and ESG factors.</li>
+      <li>Built a generative AI model using OpenAI API, improving document analysis efficiency.</li>
+    </ul>
+    <h3>Shangzheng Fund Management Co., Ltd. | Research Intern (Jul. 2023 – Aug. 2023)</h3>
+    <ul>
+      <li>Conducted industrial research on the coal market, analyzing price fluctuations and policies.</li>
+      <li>Authored a 20-page industry report and presented findings to senior analysts.</li>
+    </ul>
+    <h3>Dongguan Branch of Agricultural Bank of China | Investment Assistant Intern (Jul. 2023 – Aug. 2023)</h3>
+    <ul>
+      <li>Assisted with interbank borrowing business quotations by analyzing macroeconomic policies and market fluctuations.</li>
+      <li>Supported fixed income market analysis and corporate credit approval processes.</li>
+    </ul>
+  </section>
+
+  <!-- Projects Section -->
+  <section id="projects">
+    <h2>Projects</h2>
+    <h3>Credit Card Fraud Detection | KNN-SMOTE-LSTM Model</h3>
+    <ul>
+      <li>Developed a fraud detection model optimizing precision &amp; recall for imbalanced data.</li>
+      <li>Achieved 91% precision and 95% accuracy, surpassing baseline models.</li>
+    </ul>
+    <h3>Data Scientist Salary Prediction | Machine Learning Models</h3>
+    <ul>
+      <li>Built ensemble models (SVM, XGBoost, Random Forest, K-means) for salary analysis.</li>
+      <li>Best-performing model: KNN-SMOTE-XGBoost (R² = 0.668, RMSE = 0.158).</li>
+    </ul>
+    <h3>GitHub Repositories</h3>
+    <ul>
+      <li>
+        <strong><a href="https://github.com/celesteisyy/Economic-Analysis-In-R" target="_blank">Economic-Analysis-In-R</a></strong><br>
+        R scripts for analyzing economic data on Spain, covering employment, exchange rates, inequality, poverty, and the Gini Index.
+      </li>
+      <li>
+        <strong><a href="https://github.com/celesteisyy/Financial-Analysis-in-Py" target="_blank">Financial-Analysis-in-Py</a></strong><br>
+        Python projects for financial analysis including fraud detection and volatility prediction using advanced machine learning techniques.
+      </li>
+      <li>
+        <strong><a href="https://github.com/celesteisyy/SQL-Server" target="_blank">SQL-Server</a></strong><br>
+        Coursework projects demonstrating SQL-based data processing for Azure uploads and Yelp data analysis.
+      </li>
+      <li>
+        <strong><a href="https://github.com/celesteisyy/RAGtri" target="_blank">RAGtri</a></strong><br>
+        A trial project for setting up a large language model (LLM) interface using Retrieval-Augmented Generation (RAG) techniques.
+      </li>
+      <li>
+        <strong><a href="https://github.com/celesteisyy/Data_Scientists_Salary_Analysis" target="_blank">Data_Scientists_Salary_Analysis</a></strong><br>
+        Analysis of data scientist salaries using ensemble predictive modeling approaches to address data imbalance.
+      </li>
+    </ul>
+  </section>
+
+  <!-- Skills Section -->
+  <section id="skills">
+    <h2>Skills</h2>
+    <ul>
+      <li><strong>Technical:</strong> Python, R, SQL, Tableau, Microsoft Excel</li>
+      <li><strong>Languages:</strong> Chinese (Native), English (Proficient; IELTS 7.5, GRE 324)</li>
+    </ul>
+  </section>
+
+  <!-- Contact Section -->
+  <section id="contact">
+    <h2>Contact</h2>
     <p>
       <a href="mailto:yueying-huang@outllok.com">Email</a> |
       <a href="https://www.linkedin.com/in/yueying-huang/" target="_blank">LinkedIn</a> |
       <a href="https://github.com/celesteisyy" target="_blank">GitHub</a>
     </p>
-  </header>
-
-  <section class="section education">
-    <h2>Education</h2>
-    <p><strong>University of Illinois Urbana-Champaign</strong> - Master of Business Analytics</p>
-    <p>Aug. 2024 – May 2025 | Champaign, USA</p>
-    <p><strong>University of Bristol</strong> - Exchange Student in Accounting and Finance</p>
-    <p>Sep. 2023 – May 2024 | Bristol, UK</p>
-    <p><strong>Jiangxi University of Finance and Economics</strong> - Bachelor of Finance (Top 15%)</p>
-    <p>Sep. 2020 – Jul. 2024 | Nanchang, China | Minor: Applied Statistics</p>
   </section>
 
-  <section class="section">
-    <h2>Work Experience</h2>
-    <p><strong>CNeutral</strong> | Financial Research Intern (Aug. 2024 – Present)</p>
-    <ul>
-      <li>Developed a machine learning-based portfolio model integrating Bloomberg financial data and ESG factors.</li>
-      <li>Built a generative AI model using OpenAI API, improving document analysis efficiency.</li>
-    </ul>
-    
-    <p><strong>Shangzheng Fund Management Co., Ltd.</strong> | Research Intern (Jul. 2023 – Aug. 2023)</p>
-    <ul>
-      <li>Conducted industrial research on the coal market, analyzing price fluctuations and policies.</li>
-      <li>Authored a 20-page industry report and presented findings to senior analysts.</li>
-    </ul>
-
-    <p><strong>Dongguan Branch of Agricultural Bank of China</strong> | Investment Assistant Intern (Jul. 2023 – Aug. 2023)</p>
-    <ul>
-      <li>Combined macroeconomic policy analysis with market fluctuations to assist with interbank borrowing business quotations and broker inquiries.</li>
-      <li>Supported the department’s fixed income market analysts and corporate credit approval.</li>
-    </ul>
-  </section>
-
-  <section class="section">
-    <h2>Projects</h2>
-    <p><strong>Credit Card Fraud Detection</strong> | KNN-SMOTE-LSTM Model</p>
-    <ul>
-      <li>Developed a fraud detection model optimizing precision &amp; recall for imbalanced data.</li>
-      <li>Achieved 91% precision and 95% accuracy, surpassing baseline models.</li>
-    </ul>
-
-    <p><strong>Data Scientist Salary Prediction</strong> | Machine Learning Models</p>
-    <ul>
-      <li>Built multiple ensemble models (SVM, XGBoost, Random Forest, K-means) for salary analysis.</li>
-      <li>Best-performing model: KNN-SMOTE-XGBoost (R² = 0.668, RMSE = 0.158).</li>
-    </ul>
-  </section>
-
-  <section class="section">
-    <h2>GitHub Repositories</h2>
-    <ul>
-      <li>
-        <strong><a href="https://github.com/celesteisyy/Economic-Analysis-In-R" target="_blank">Economic-Analysis-In-R</a></strong><br>
-        This repository contains R scripts for analyzing economic data. Covers topics such as employment trends, exchange rates, income inequality, poverty, and the Gini Index, utilizing data from sources like OECD, IMF, and the World Bank.
-      </li>
-      <li>
-        <strong><a href="https://github.com/celesteisyy/Financial-Analysis-in-Py" target="_blank">Financial-Analysis-in-Py</a></strong><br>
-        This repository features Python projects for financial data analysis. It includes a credit card fraud detection project using EDA, PCA, KNN-SMOTE, and LSTM, as well as an EMD-LSTM project for predicting stock market volatility with risk assessment via VaR and backtesting using the Kupiec method.
-      </li>
-      <li>
-        <strong><a href="https://github.com/celesteisyy/SQL-Server" target="_blank">SQL-Server</a></strong><br>
-        Comprising coursework, this repository includes notebooks and scripts that demonstrate data processing techniques for Azure uploads and analysis of Yelp data for coffee shop insights. It emphasizes JSON-to-Pandas conversion and SQL-to-Python translation.
-      </li>
-      <li>
-        <strong><a href="https://github.com/celesteisyy/RAGtri" target="_blank">RAGtri</a></strong><br>
-        A trial project for setting up a large language model (LLM) and its interface. This repository serves as a learning example for implementing Retrieval-Augmented Generation (RAG) techniques, with reference to LlamaIndex documentation.
-      </li>
-      <li>
-        <strong><a href="https://github.com/celesteisyy/Data_Scientists_Salary_Analysis" target="_blank">Data_Scientists_Salary_Analysis</a></strong><br>
-        This repository analyzes the Kaggle Data Scientist Salaries 2023 dataset using two predictive modeling approaches. It compares methods such as SVM (with K-means and Random Forest enhancements) and an XGBoost model enhanced with KNN-SMOTE to address data imbalance, with evaluation based on RMSE and R-square metrics.
-      </li>
-    </ul>
-  </section>
-
-  <section class="section">
-    <h2>Skills</h2>
-    <ul>
-      <li><strong>Technical:</strong> Python | R | SQL | Tableau | Microsoft Excel</li>
-      <li><strong>Languages:</strong> Chinese (Native), English (Proficient | IELTS 7.5, GRE 324)</li>
-    </ul>
-  </section>
+  <footer>
+    <p>© 2025 Yueying (Celeste) Huang. All Rights Reserved.</p>
+  </footer>
 </body>
 </html>
