@@ -4,10 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Yueying (Celeste) Huang</title>
+  <!-- Include Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     body {
       background-color: #000; /* Black background */
-      color: #fff;           /* Default white text */
+      color: #fff;            /* Default white text */
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
@@ -34,43 +36,66 @@
     }
     nav a {
       text-decoration: none;
-      color: #fff;
+      color: #fff; /* Email and LinkedIn in nav remain white */
       font-weight: bold;
     }
     nav a:hover {
       color: #ccc;
     }
-    /* Hero Section */
+
+    .contact-fixed {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 101;
+    }
+    .contact-fixed a {
+      margin-left: 10px;
+      color: #fff;
+      font-size: 1.2em;
+      text-decoration: none;
+    }
+
+    .contact-fixed a[href*="github.com"] {
+      color: #007ACC;
+    }
+    .contact-fixed a:hover {
+      color: #ccc;
+    }
+
     .hero {
       padding: 100px 20px 50px; /* Extra top padding to offset fixed nav */
       text-align: center;
     }
     .hero h1 {
       font-size: 3em;
-      color: #007ACC;
+      color: #007ACC; 
       margin-bottom: 10px;
     }
     .hero p {
       font-size: 1.2em;
       margin: 0;
     }
-    /* Section Styling */
+    
     section {
       padding: 50px 20px;
       max-width: 800px;
       margin: auto;
     }
-    .education {
+
+    h2, h3 {
       color: #007ACC;
-    }
-    h2 {
       border-bottom: 1px solid #444;
       padding-bottom: 10px;
       margin-bottom: 20px;
     }
-    h3 {
-      margin-top: 30px;
-      margin-bottom: 10px;
+
+    .education strong {
+      color: #007ACC;
+    }
+
+    a[href*="github.com"] {
+      color: #007ACC;
     }
     ul {
       list-style: none;
@@ -80,13 +105,16 @@
       margin-bottom: 10px;
     }
     a {
-      color: #fff;
       text-decoration: none;
     }
     a:hover {
       color: #ccc;
     }
-    /* Footer */
+
+    #skills ul li {
+      font-size: 1.1em;
+    }
+
     footer {
       text-align: center;
       padding: 20px;
@@ -104,9 +132,15 @@
       <li><a href="#experience">Experience</a></li>
       <li><a href="#projects">Projects</a></li>
       <li><a href="#skills">Skills</a></li>
-      <li><a href="#contact">Contact</a></li>
     </ul>
   </nav>
+  
+  <!-- Fixed Contact Box at Top Right -->
+  <div class="contact-fixed">
+    <a href="mailto:yueying-huang@outllok.com" title="Email"><i class="fa-solid fa-envelope"></i></a>
+    <a href="https://www.linkedin.com/in/yueying-huang/" target="_blank" title="LinkedIn"><i class="fa-brands fa-linkedin"></i></a>
+    <a href="https://github.com/celesteisyy" target="_blank" title="GitHub"><i class="fa-brands fa-github"></i></a>
+  </div>
 
   <!-- Hero / About Section -->
   <div class="hero" id="about">
@@ -132,8 +166,8 @@
   </section>
 
   <!-- Experience Section -->
-  <section id="work experience">
-    <h2>Work Experience</h2>
+  <section id="experience">
+    <h2>Experience</h2>
     <h3>CNeutral | Financial Research Intern (Aug. 2024 – Present)</h3>
     <ul>
       <li>Developed a machine learning-based portfolio model integrating Bloomberg financial data and ESG factors.</li>
@@ -168,7 +202,7 @@
     <ul>
       <li>
         <strong><a href="https://github.com/celesteisyy/Economic-Analysis-In-R" target="_blank">Economic-Analysis-In-R</a></strong><br>
-        R scripts for analyzing economic data, covering employment, exchange rates, inequality, poverty, and the Gini Index.
+        R scripts for analyzing economic data on Spain, covering employment, exchange rates, inequality, poverty, and the Gini Index.
       </li>
       <li>
         <strong><a href="https://github.com/celesteisyy/Financial-Analysis-in-Py" target="_blank">Financial-Analysis-in-Py</a></strong><br>
@@ -194,22 +228,12 @@
     <h2>Skills</h2>
     <ul>
       <li><strong>Technical:</strong> Python | R | SQL | Tableau | Microsoft Excel</li>
-      <li><strong>Languages:</strong> Chinese (Native), English (Proficient)</li>
+      <li><strong>Languages:</strong> Mandarin (Native) | Cantonese (Fluent) | English (Proficient)</li>
     </ul>
   </section>
 
-  <!-- Contact Section -->
-  <section id="contact">
-    <h2>Contact</h2>
-    <p>
-      <a href="mailto:yueying-huang@outllok.com">Email</a> |
-      <a href="https://www.linkedin.com/in/yueying-huang/" target="_blank">LinkedIn</a> |
-      <a href="https://github.com/celesteisyy" target="_blank">GitHub</a>
-    </p>
-  </section>
-
   <footer>
-    <p>© 2025 Celeste is Yueying</p>
+    <p>© 2025 Celeste is Yueying 😊</p>
   </footer>
 </body>
 </html>
