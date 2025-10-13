@@ -1,22 +1,33 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Celeste's Playground</title>
   <style>
     body {
-      font-family: "Courier New", monospace;
-      background-color: #0b0c10;
-      color: #66fcf1;
+      margin: 0;
+      height: 100vh;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      flex-direction: column;
+      background: radial-gradient(circle at top, #10141a, #06080a);
+      color: #66fcf1;
+      font-family: "Courier New", monospace;
+      overflow: hidden;
     }
+
     h1 {
       font-size: 1.8rem;
       margin-bottom: 1rem;
+      text-shadow: 0 0 5px #45a29e;
     }
+
+    p {
+      color: #c5c6c7;
+      margin: 0.3rem 0;
+    }
+
     .cursor {
       display: inline-block;
       width: 10px;
@@ -24,13 +35,39 @@
       background: #66fcf1;
       animation: blink 1s infinite;
     }
+
     @keyframes blink {
       50% { opacity: 0; }
+    }
+
+    .terminal-box {
+      border: 1px solid #45a29e;
+      padding: 1.5rem 2rem;
+      border-radius: 10px;
+      background: rgba(15, 17, 22, 0.85);
+      box-shadow: 0 0 10px rgba(102, 252, 241, 0.1);
+      text-align: center;
+      max-width: 600px;
+    }
+
+    footer {
+      position: absolute;
+      bottom: 20px;
+      font-size: 0.9rem;
+      color: #777;
     }
   </style>
 </head>
 <body>
-  <h1>> Page under construction_ <span class="cursor"></span></h1>
-  <p>Initializing Something Fun...</p>
+  <div class="terminal-box">
+    <h1>&gt; Page under construction_ <span class="cursor"></span></h1>
+    <p>Initializing CelesteBot prototype...</p>
+    <p>System log: data pipelines calibrating ⚙️</p>
+    <p>ETA: When inspiration strikes 💫</p>
+  </div>
+
+  <footer>
+    © 2025 Celeste | Celeste's Playground 🧪
+  </footer>
 </body>
 </html>
