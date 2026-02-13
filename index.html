@@ -465,6 +465,29 @@
         grid-template-columns: 1fr;
       }
     }
+
+    /* Certifications styles */
+    .certifications-container {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      padding: 0 10px 10px 10px;
+    }
+
+    .credly-badge {
+      background-color: rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(0,122,204,0.2);
+      border-radius: 10px;
+      padding: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    @media (max-width: 480px) {
+      .certifications-container { gap: 12px; }
+      .credly-badge { padding: 12px; }
+    }
   </style>
 </head>
 <body>
@@ -475,6 +498,7 @@
       <li><a href="#education">Education</a></li>
       <li><a href="#experience">Experience</a></li>
       <li><a href="#projects">Projects</a></li>
+      <li><a href="#certifications">Certifications</a></li>
       <li><a href="#skills">Skills</a></li>
     </ul>
   </nav>
@@ -505,12 +529,24 @@
   <h2>About Me</h2>
   <div class="about-content">
     <div class="about-text">
-      <p>Hello! I’m Celeste, a data analyst with a Master’s degree in Business Analytics from UIUC.</p>
+      <p>Hello! I’m Celeste, a data security engineer with a Master’s degree in Business Analytics from UIUC.</p>
       <p>My work sits at the intersection of data science, analytics, and engineering. I’m comfortable working across the data stack, from SQL-based data wrangling and ETL workflows to Python-based modeling and R-based exploratory analysis.</p>
       <p>Technically, I work with tools like Python, SQL, R, Tableau, Power BI, and Git. I also have experience with cloud platforms such as AWS, Azure and GCP.</p>
       <p>I believe that the best insights come from both analytical rigor and a strong sense of curiosity, and I’m always excited to keep learning and building!</p>
     </div>
   </div>
+  </section>
+
+  <!-- Certifications Section -->
+  <section id="certifications" class="gradient-bg">
+    <h2>Certifications</h2>
+      <a href="https://www.credly.com/badges/40e69ccd-5209-40c1-bbba-6b959694ebe9" 
+        target="_blank">
+        <img src="pics/aws-certified-security-specialty.png" 
+            alt="AWS Certified Security Specialty" 
+            width="150">
+      </a>
+    </div>
   </section>
 
 
@@ -529,13 +565,6 @@
         <p>Exchange Student in Accounting and Finance</p>
         <p>Sep. 2023 – May 2024 | Bristol, UK</p>
         <p><i class="fa-solid fa-globe"></i> Explored global financial systems with an analytical lens</p>
-      </div>
-      <div class="edu-card">
-        <strong>Jiangxi University of Finance and Economics</strong>
-        <p>Bachelor of Finance (Top 15%)</p>
-        <p>Minor: Applied Statistics</p>
-        <p>Sep. 2020 – Jul. 2024 | Nanchang, China</p>
-        <p><i class="fa-solid fa-medal"></i> Combined financial acumen with a quantitative mindset through statistics</p>
       </div>
     </div>
   </section>
@@ -562,13 +591,6 @@
           <li>Leverage Google Marketing Platform (GMP), especially Google Analytics, to conduct in-depth user behavior analysis and guide client growth strategies.</li>
           <li>Build and maintain ETL pipelines on Google Cloud Platform (GCP) using BigQuery to support OLAP-style analytics at scale.</li>
           <li>Design and deploy interactive dashboards in Looker Studio to visualize KPIs, customer journeys, and campaign performance across teams and stakeholders.</li>
-        </ul>
-      </div>
-      <div class="experience-item">
-        <h3>Research Intern</h3>
-        <span class="exp-meta">Topright Fund Management Co., Ltd. | Jul. 2023 – Aug. 2023</span>
-        <ul>
-          <li>Conducted industrial research on the coal market, analyzing price fluctuations and policies.</li>
         </ul>
       </div>
     </div>
@@ -648,6 +670,8 @@
       </div>
     </div>
   </section>
+
+
 
   <footer>
     <p>© 2025 Celeste Huang</p>
