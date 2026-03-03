@@ -98,14 +98,15 @@
 
   <div class="input-area">
     <input id="input" placeholder="Type a message..." />
-    <button onclick="sendMessage()">Send</button>
-    <button onclick="resetChat()" style="background:#ef4444;">Clear</button>
+    <button id="sendBtn" onclick="sendMessage()">Send</button>
+    <button id="resetBtn" style="background:#ef4444;">Clear</button>
   </div>
 </div>
 
 <script>
 const chatbox = document.getElementById("chatbox");
 const inputField = document.getElementById("input");
+const sendBtn = document.getElementById("sendBtn");
 
 inputField.addEventListener("keydown", function(e) {
   if (e.key === "Enter") sendMessage();
@@ -153,6 +154,9 @@ async function resetChat() {
 
   chatbox.innerHTML = "";
 }
+
+  window.sendMessage = sendMessage;
+  window.resetChat = resetChat;
 </script>
 
 </body>
