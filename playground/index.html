@@ -129,7 +129,7 @@ async function sendMessage() {
   inputField.value = "";
 
   const loadingDiv = addMessage("Typing...", "bot");
-  loadingDiv.classList.add("loading")
+
 
   try {
     const res = await fetch("https://cyssie-api.onrender.com/chat", {
