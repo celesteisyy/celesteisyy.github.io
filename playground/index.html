@@ -6,15 +6,15 @@
 
   <style>
     h2 {
-    font-weight: 600;
-    letter-spacing: 0.5px;
-
-    animation: fadeIn 0.8s ease;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      animation: fadeIn 0.8s ease;
+      margin-top: 0;
     }
 
     @keyframes fadeIn {
-    from {opacity:0; transform: translateY(-10px);}
-    to {opacity:1; transform: translateY(0);}
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     body {
@@ -22,63 +22,48 @@
       background: #0f172a;
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       color: white;
-      display: flex;
-      justify-content: center;
     }
 
     .container {
-    max-width: 900px;
-    margin: auto;
-    padding: 30px;
-
-    background: rgba(15, 23, 42, 0.8);
-    border-radius: 16px;
-
-    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
-
-    backdrop-filter: blur(8px);
-
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+      width: min(1200px, 92vw);
+      margin: 40px auto;
+      padding: 30px;
+      background: rgba(15, 23, 42, 0.8);
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+      backdrop-filter: blur(8px);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-sizing: border-box;
     }
 
     .container:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-    }
-
-    .status {
-    color:#259aaf;
-    margin-left:6px;
+      transform: translateY(-4px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
     }
 
     iframe {
       width: 100%;
-      height: 800px;
+      height: 80vh;
+      min-height: 700px;
       border: none;
       border-radius: 12px;
       background: #1e293b;
+      display: block;
     }
   </style>
 </head>
 
 <body>
+  <div class="container">
+    <h2>Cyssie</h2>
+    <p>Celeste's personal AI agent.</p>
 
-<div class="container">
+    <p>
+      Cyssie is my personal AI agent.
+      Ask her anything, and she'll do her best to help you out!
+    </p>
 
-<h2>Cyssie</h2>
-<p>Celeste's personal AI agent.</p>
-
-<p>
-Cyssie is my personal AI agent.  
-Ask her anything, and she'll do her best to help you out!
-</p>
-
-<iframe 
-src="https://cyssie-api.onrender.com"
-style="width:100%; height:80vh; border:none; border-radius:12px;">
-</iframe>
-
-</div>
-
+    <iframe src="https://cyssie-api.onrender.com"></iframe>
+  </div>
 </body>
 </html>
