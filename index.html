@@ -269,12 +269,45 @@
       border-color: rgba(91, 124, 255, 0.22);
     }
 
-    .about-card {
-      padding: 28px;
+    .md-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      backdrop-filter: blur(12px);
     }
 
-    .about-card p + p {
-      margin-top: 14px;
+    .md-topbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-elevated);
+    }
+
+    .md-topbar span {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--muted);
+      opacity: 0.45;
+    }
+
+    .md-card pre {
+      margin: 0;
+      padding: 24px 28px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .md-card code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 0.98rem;
+      line-height: 1.85;
+      color: var(--text);
     }
 
     .education-cards,
@@ -559,8 +592,8 @@
     <section class="hero" id="hero">
       <div class="hero-inner">
         <div class="eyebrow">Data • Security • Analytics</div>
-        <h1>Yueying (Celeste) Huang</h1>
-        <p>Data enthusiast.</p>
+        <h1>Celeste Huang</h1>
+        <p>Data Security Engineer with a background in business analytics.</p>
 
         <div class="hero-actions">
           <a class="pill-btn" href="#projects"><i class="fa-solid fa-arrow-right"></i> View Projects</a>
@@ -576,14 +609,48 @@
 
     <section id="about">
       <div class="section-header">
-        <h2>About Me</h2>
+        <h2>celeste_skills.md</h2>
       </div>
 
-      <div class="glass-card about-card">
-        <p>Hello! I’m Celeste, a data security engineer with a Master’s degree in Business Analytics from UIUC.</p>
-        <p>My work sits at the intersection of AI/ML and Cybersecurity. I’m comfortable working across the data stack, from SQL-based data wrangling and ETL workflows to Python-based modeling and R-based exploratory analysis.</p>
-        <p>Technically, I work with tools like Python, SQL, R, Tableau, Power BI, and Git. I also have experience with cloud platforms such as AWS, Azure and GCP.</p>
-        <p>I believe that the best insights come from both analytical rigor and a strong sense of curiosity, and I’m always excited to keep learning and building.</p>
+      <div class="md-card">
+        <div class="md-topbar">
+          <span></span><span></span><span></span>
+        </div>
+
+        <pre><code># celeste_skills.md
+
+## Role
+Data Security Engineer
+
+## Description
+Data Security Engineer with training in business analytics, interested in building practical systems across security, data, and automation.
+
+## Core Areas
+- Data security
+- Security engineering
+- Analytics workflows
+- Data science and applied ML
+- Workflow automation
+
+## Tooling
+- Python
+- SQL
+- R
+- Git
+- Tableau
+- Power BI
+- Looker Studio
+
+## Platform
+- GCP
+- AWS
+- Azure
+
+## Current Focus
+- AI / ML for security workflows
+- Analytics-driven decision support
+- Practical automation and agent-based workflows
+</code></pre>
       </div>
     </section>
 
@@ -738,8 +805,8 @@
   </main>
 
   <footer>
-    <p>© 2025 Celeste Huang</p>
-    <p>Data Science Enthusiast | Data Analytics | Insight Generation & Decision Support</p>
+    <p>© 2026 Celeste Huang</p>
+    <p>Data Security Engineer | Analytics | Automation</p>
   </footer>
 
   <a href="#hero" class="back-to-top" id="backToTop" aria-label="Back to top">
