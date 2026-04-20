@@ -1,681 +1,748 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Yueying (Celeste) Huang</title>
-  <!-- Include Font Awesome for icons -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Homepage</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
   <style>
     :root {
-      --main-color: #007ACC;
-      --accent-color: #FF5E9A;
-      --dark-bg: #000;
-      --text-light: #fff;
+      color-scheme: light dark;
+
+      --bg: #f7f8fc;
+      --bg-elevated: rgba(255, 255, 255, 0.72);
+      --card: rgba(255, 255, 255, 0.82);
+      --text: #172033;
+      --muted: #667089;
+      --border: rgba(23, 32, 51, 0.10);
+      --primary: #5b7cff;
+      --primary-soft: rgba(91, 124, 255, 0.10);
+      --accent: #8b6dff;
+      --shadow: 0 10px 30px rgba(27, 39, 78, 0.08);
+      --hero-bg: #eef2ff;
+      --maxw: 1120px;
     }
-    
-    body {
-      background-color: var(--dark-bg);
-      color: var(--text-light);
-      font-family: 'Segoe UI', Arial, sans-serif;
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b1020;
+        --bg-elevated: rgba(255, 255, 255, 0.06);
+        --card: rgba(255, 255, 255, 0.05);
+        --text: #e8eefc;
+        --muted: #a8b2ca;
+        --border: rgba(255, 255, 255, 0.10);
+        --primary: #8aa2ff;
+        --primary-soft: rgba(138, 162, 255, 0.14);
+        --accent: #b29cff;
+        --shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+        --hero-bg: #11182b;
+      }
+    }
+
+    * {
       margin: 0;
       padding: 0;
-      line-height: 1.6;
+      box-sizing: border-box;
     }
-    
-    /* Animated gradient background for sections */
-    .gradient-bg {
-      background: linear-gradient(45deg, #000, #0a192f, #000);
-      background-size: 400% 400%;
-      animation: gradient 15s ease infinite;
+
+    html {
+      scroll-behavior: smooth;
     }
-    
-    @keyframes gradient {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Arial, sans-serif;
+      line-height: 1.65;
+      overflow-x: hidden;
     }
-    
-    /* Fixed Navigation Bar */
-    nav {
-      background-color: rgba(0, 0, 0, 0.85);
-      backdrop-filter: blur(5px);
-      padding: 15px 20px;
-      position: fixed;
-      width: 100%;
-      top: 0;
-      left: 0;
+
+    a {
+      color: inherit;
+    }
+
+    .nav-wrap {
+      position: sticky;
+      top: 14px;
       z-index: 100;
-      transition: all 0.3s ease;
+      padding: 14px 18px 0;
     }
-    
+
+    nav {
+      max-width: var(--maxw);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 12px 16px;
+      border-radius: 999px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow);
+      transition: 0.25s ease;
+    }
+
     nav.scrolled {
-      padding: 10px 20px;
-      box-shadow: 0 2px 10px rgba(0, 120, 204, 0.2);
+      transform: translateY(-2px);
     }
-    
+
+    .brand {
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
     nav ul {
       list-style: none;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-    }
-    
-    nav li {
-      margin: 0 15px;
-    }
-    
-    nav a {
-      text-decoration: none;
-      color: var(--text-light);
-      font-weight: bold;
-      position: relative;
-      padding: 5px 0;
-      transition: all 0.3s ease;
-    }
-    
-    nav a::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 0;
-      height: 2px;
-      background-color: var(--accent-color);
-      transition: width 0.3s ease;
-    }
-    
-    nav a:hover {
-      color: var(--accent-color);
-    }
-    
-    nav a:hover::after {
-      width: 100%;
-    }
-
-    .contact-fixed {
-      position: fixed;
-      top: 15px;
-      right: 20px;
-      z-index: 101;
-    }
-    
-    .contact-fixed a {
-      margin-left: 15px;
-      color: var(--text-light);
-      font-size: 1.3em;
-      text-decoration: none;
-      transition: all 0.3s ease;
-      display: inline-block;
-    }
-    
-    .contact-fixed a:hover {
-      color: var(--accent-color);
-      transform: translateY(-3px);
-    }
-    
-    .contact-fixed a[href*="github.com"] {
-      color: var(--main-color);
-    }
-
-    .hero {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.9)), url('/api/placeholder/1200/800') center/cover no-repeat fixed;
-      padding: 0 20px;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .hero h1 {
-      font-size: 4em;
-      color: var(--main-color);
-      margin-bottom: 20px;
-      animation: fadeInDown 1s ease;
-      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-    }
-    
-    .hero p {
-      font-size: 1.3em;
-      margin: 0 0 30px 0;
-      animation: fadeInUp 1.2s ease;
-      max-width: 800px;
-    }
-    
-    .hero-tags {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
       gap: 10px;
-      margin-top: 30px;
-      animation: fadeIn 1.5s ease;
-    }
-    
-    .tag {
-      background-color: rgba(0, 122, 204, 0.2);
-      border: 1px solid var(--main-color);
-      padding: 8px 15px;
-      border-radius: 20px;
-      font-size: 0.9em;
-      transition: all 0.3s ease;
-    }
-    
-    .tag:hover {
-      background-color: var(--main-color);
-      transform: translateY(-3px);
-    }
-    
-    @keyframes fadeInDown {
-      from { opacity: 0; transform: translateY(-30px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(30px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    
-    section {
-      padding: 80px 20px;
-      max-width: 1000px;
-      margin: auto;
-    }
-    
-    section h2 {
-      font-size: 2.5em;
-      color: var(--main-color);
-      text-align: center;
-      margin-bottom: 40px;
-      position: relative;
-    }
-    
-    section h2::after {
-      content: '';
-      position: absolute;
-      bottom: -10px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 80px;
-      height: 3px;
-      background-color: var(--accent-color);
+      margin: 0;
+      padding: 0;
+      flex: 1;
     }
 
-    .about-content {
-      display: flex;
-      flex-direction: column;
-      gap: 30px;
+    nav a.nav-link,
+    .icon-btn,
+    .pill-btn,
+    .tag,
+    .back-to-top {
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      text-decoration: none;
+      transition: 0.2s ease;
     }
-    
-    .about-text p {
-      font-size: 1.1em;
-      line-height: 1.7;
-      margin-bottom: 20px;
+
+    nav a.nav-link {
+      display: inline-block;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+
+    nav a.nav-link:hover,
+    .icon-btn:hover,
+    .pill-btn:hover,
+    .tag:hover,
+    .back-to-top:hover {
+      transform: translateY(-1px);
+      background: var(--primary-soft);
+      border-color: rgba(91, 124, 255, 0.22);
+      color: var(--primary);
+    }
+
+    .contact-fixed {
+      display: flex;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow);
+      color: var(--text);
+    }
+
+    .container {
+      width: min(var(--maxw), calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .hero {
+      min-height: calc(100vh - 88px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 72px 20px 48px;
+      background: var(--hero-bg);
+      border-radius: 36px;
+      margin-top: 18px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-inner {
+      max-width: 860px;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      margin-bottom: 18px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.92rem;
+      box-shadow: var(--shadow);
+    }
+
+    .hero h1 {
+      font-size: clamp(2.8rem, 7vw, 5rem);
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+      margin-bottom: 16px;
+    }
+
+    .hero p {
+      font-size: clamp(1.05rem, 2vw, 1.2rem);
+      color: var(--muted);
+      max-width: 760px;
+      margin: 0 auto 26px;
+    }
+
+    .hero-actions,
+    .hero-tags {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .pill-btn,
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 18px;
+      border-radius: 999px;
+      color: var(--text);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-tags {
+      margin-top: 18px;
+    }
+
+    section {
+      padding: 72px 0 12px;
+    }
+
+    .section-header {
+      margin-bottom: 24px;
+    }
+
+    .section-header h2 {
+      font-size: clamp(1.9rem, 4vw, 2.7rem);
+      line-height: 1.1;
+      margin-bottom: 10px;
+    }
+
+    .section-header p {
+      color: var(--muted);
+      max-width: 740px;
+    }
+
+    .glass-card,
+    .edu-card,
+    .project-card,
+    .skill-category,
+    .experience-item,
+    .credly-badge {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+      transition: 0.22s ease;
+    }
+
+    .glass-card:hover,
+    .edu-card:hover,
+    .project-card:hover,
+    .skill-category:hover,
+    .experience-item:hover,
+    .credly-badge:hover {
+      transform: translateY(-4px);
+      border-color: rgba(91, 124, 255, 0.22);
+    }
+
+    .about-card {
+      padding: 28px;
+    }
+
+    .about-card p + p {
+      margin-top: 14px;
+    }
+
+    .education-cards,
+    .skills-container,
+    .projects-container {
+      display: grid;
+      gap: 22px;
     }
 
     .education-cards {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      justify-content: center;
-    }
-    
-    .edu-card {
-      background-color: rgba(0, 0, 0, 0.5);
-      border: 1px solid var(--main-color);
-      border-radius: 10px;
-      padding: 25px;
-      flex: 1 1 300px;
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .edu-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 3px;
-      background: linear-gradient(90deg, var(--main-color), var(--accent-color));
-    }
-    
-    .edu-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 5px 15px rgba(0, 122, 204, 0.3);
-    }
-    
-    .edu-card strong {
-      color: var(--main-color);
-      font-size: 1.2em;
-      display: block;
-      margin-bottom: 10px;
-    }
-    
-    .edu-card p {
-      margin: 5px 0;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .projects-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 25px;
-    }
-    
-    .project-card {
-      background-color: rgba(0, 0, 0, 0.5);
-      border-radius: 10px;
-      overflow: hidden;
-      border: 1px solid rgba(0, 122, 204, 0.3);
-      transition: all 0.3s ease;
-    }
-    
-    .project-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 5px 15px rgba(0, 122, 204, 0.3);
-    }
-    
-    .project-img {
-      height: 160px;
-      background-color: #0a192f;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .project-img i {
-      font-size: 3em;
-      color: var(--main-color);
-    }
-    
-    .project-content {
-      padding: 20px;
-    }
-    
-    .project-content h3 {
-      color: var(--main-color);
-      margin-top: 0;
-      border: none;
-      font-size: 1.2em;
-    }
-    
-    .project-content p {
-      margin-bottom: 15px;
-      font-size: 0.95em;
-    }
-    
-    .project-link {
-      color: var(--accent-color);
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      font-weight: bold;
-      transition: all 0.3s ease;
-    }
-    
-    .project-link:hover {
-      color: var(--main-color);
-    }
-    
-    .project-link i {
-      margin-left: 5px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
     .skills-container {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .edu-card,
+    .project-card,
+    .skill-category,
+    .experience-item {
+      padding: 24px;
+    }
+
+    .edu-card strong,
+    .project-content h3,
+    .skill-category h3,
+    .experience-item h3 {
+      color: var(--text);
+    }
+
+    .edu-card strong {
+      display: block;
+      font-size: 1.12rem;
+      margin-bottom: 10px;
+    }
+
+    .edu-card p + p {
+      margin-top: 8px;
+    }
+
+    .experience-section {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 25px;
+      gap: 22px;
     }
-    
-    .skill-category {
-      background-color: rgba(0, 0, 0, 0.5);
-      border-radius: 10px;
-      padding: 25px;
-      border: 1px solid rgba(0, 122, 204, 0.3);
+
+    .experience-item .exp-meta {
+      display: block;
+      margin: 8px 0 14px;
+      color: var(--muted);
+      font-style: italic;
     }
-    
+
+    .experience-item ul {
+      padding-left: 18px;
+    }
+
+    .experience-item li + li {
+      margin-top: 10px;
+    }
+
+    .project-card {
+      overflow: hidden;
+      padding: 0;
+    }
+
+    .project-img {
+      height: 170px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--primary-soft);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .project-img i {
+      font-size: 3rem;
+      color: var(--primary);
+    }
+
+    .project-content {
+      padding: 22px;
+    }
+
+    .project-content h3 {
+      margin-bottom: 10px;
+      font-size: 1.15rem;
+    }
+
+    .project-content p {
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .project-link {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .project-link:hover {
+      color: var(--accent);
+    }
+
     .skill-category h3 {
-      color: var(--accent-color);
-      margin-top: 0;
-      text-align: center;
-      border: none;
+      margin-bottom: 16px;
+      font-size: 1.08rem;
     }
-    
+
     .skill-list {
       list-style: none;
       padding: 0;
       margin: 0;
     }
-    
+
     .skill-list li {
-      margin-bottom: 15px;
       display: flex;
-      align-items: center;
-    }
-    
-    .skill-list li i {
-      color: var(--main-color);
-      margin-right: 10px;
+      align-items: flex-start;
+      gap: 10px;
+      color: var(--text);
     }
 
-    .experience-section {
-      margin-top: 20px;
+    .skill-list li + li {
+      margin-top: 14px;
     }
-    
-    .experience-item {
-      background-color: rgba(0, 0, 0, 0.5);
-      border-radius: 10px;
-      padding: 25px;
-      margin-bottom: 25px;
-      border: 1px solid rgba(0, 122, 204, 0.3);
-      transition: all 0.3s ease;
+
+    .skill-list i {
+      color: var(--primary);
+      margin-top: 4px;
     }
-    
-    .experience-item:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 5px 15px rgba(0, 122, 204, 0.3);
+
+    .certifications-container {
+      display: flex;
+      justify-content: center;
     }
-    
-    .experience-item h3 {
-      color: var(--main-color);
-      margin-top: 0;
-      border: none;
+
+    .credly-badge {
+      padding: 18px;
     }
-    
-    .experience-item .exp-meta {
-      color: #ccc;
-      font-style: italic;
-      margin-bottom: 15px;
+
+    .credly-badge img {
       display: block;
+      max-width: 150px;
+      height: auto;
     }
 
     footer {
+      padding: 54px 20px 40px;
       text-align: center;
-      padding: 30px 20px;
-      background-color: rgba(0, 0, 0, 0.8);
-      position: relative;
+      color: var(--muted);
     }
-    
-    footer p {
-      margin: 0;
-      font-size: 1em;
+
+    footer p + p {
+      margin-top: 8px;
     }
-    
-    footer .heart {
-      color: var(--accent-color);
-      display: inline-block;
-      animation: pulse 1.5s infinite;
-    }
-    
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.2); }
-      100% { transform: scale(1); }
-    }
-    
+
     .back-to-top {
       position: fixed;
-      bottom: 20px;
       right: 20px;
-      background-color: var(--main-color);
-      color: var(--text-light);
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
+      bottom: 20px;
+      width: 46px;
+      height: 46px;
+      border-radius: 999px;
       display: flex;
-      justify-content: center;
       align-items: center;
-      text-decoration: none;
-      transition: all 0.3s ease;
+      justify-content: center;
+      color: var(--text);
+      box-shadow: var(--shadow);
       opacity: 0;
       visibility: hidden;
+      z-index: 101;
     }
-    
+
     .back-to-top.visible {
       opacity: 1;
       visibility: visible;
     }
-    
-    .back-to-top:hover {
-      background-color: var(--accent-color);
-      transform: translateY(-3px);
-    }
-    
-    /* Responsive Adjustments */
-    @media (max-width: 768px) {
-      .hero h1 {
-        font-size: 3em;
+
+    @media (max-width: 980px) {
+      nav {
+        border-radius: 24px;
+        padding: 14px;
+        align-items: flex-start;
+        flex-direction: column;
       }
-      
+
       nav ul {
-        flex-wrap: wrap;
+        justify-content: flex-start;
       }
-      
+
+      .contact-fixed {
+        align-self: flex-start;
+      }
+
       .education-cards,
-      .projects-container {
+      .projects-container,
+      .skills-container {
         grid-template-columns: 1fr;
       }
+
+      .hero {
+        min-height: auto;
+        padding: 64px 20px;
+      }
     }
 
-    /* Certifications styles */
-    .certifications-container {
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-      padding: 0 10px 10px 10px;
-    }
+    @media (max-width: 640px) {
+      .container {
+        width: min(var(--maxw), calc(100% - 20px));
+      }
 
-    .credly-badge {
-      background-color: rgba(0, 0, 0, 0.45);
-      border: 1px solid rgba(0,122,204,0.2);
-      border-radius: 10px;
-      padding: 16px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
+      .nav-wrap {
+        padding: 10px 10px 0;
+      }
 
-    @media (max-width: 480px) {
-      .certifications-container { gap: 12px; }
-      .credly-badge { padding: 12px; }
+      nav a.nav-link {
+        font-size: 0.92rem;
+        padding: 8px 12px;
+      }
+
+      .icon-btn {
+        width: 38px;
+        height: 38px;
+      }
+
+      .hero {
+        border-radius: 28px;
+      }
+
+      .eyebrow,
+      .pill-btn,
+      .tag {
+        font-size: 0.9rem;
+      }
+
+      section {
+        padding-top: 58px;
+      }
     }
   </style>
 </head>
+
 <body>
-  <!-- Fixed Navigation Bar -->
-  <nav id="navbar">
-    <ul>
-      <li><a href="#about">About</a></li>
-      <li><a href="#education">Education</a></li>
-      <li><a href="#experience">Experience</a></li>
-      <li><a href="#projects">Projects</a></li>
-      <li><a href="#skills">Skills</a></li>
-      <li><a href="#certifications">Certifications</a></li>
-    </ul>
-  </nav>
-  
-  <!-- Fixed Contact Box at Top Right -->
-  <div class="contact-fixed">
-    <a href="mailto:yueying-huang@outllok.com" title="Email"><i class="fa-solid fa-envelope"></i></a>
-    <a href="https://www.linkedin.com/in/yueying-huang/" target="_blank" title="LinkedIn"><i class="fa-brands fa-linkedin"></i></a>
-    <a href="https://github.com/celesteisyy" target="_blank" title="GitHub"><i class="fa-brands fa-github"></i></a>
-    <a href="https://celesteisyy.github.io/playground" target="_blank" title="Playground"><i class="fa-solid fa-flask"></i></a>
+  <div class="nav-wrap">
+    <nav id="navbar">
+      <a class="brand" href="#hero">Celeste Huang</a>
+
+      <ul>
+        <li><a class="nav-link" href="#about">About</a></li>
+        <li><a class="nav-link" href="#education">Education</a></li>
+        <li><a class="nav-link" href="#experience">Experience</a></li>
+        <li><a class="nav-link" href="#projects">Projects</a></li>
+        <li><a class="nav-link" href="#skills">Skills</a></li>
+        <li><a class="nav-link" href="#certifications">Certifications</a></li>
+      </ul>
+
+      <div class="contact-fixed">
+        <a class="icon-btn" href="mailto:yueying-huang@outllok.com" title="Email" aria-label="Email">
+          <i class="fa-solid fa-envelope"></i>
+        </a>
+        <a class="icon-btn" href="https://www.linkedin.com/in/yueying-huang/" target="_blank" title="LinkedIn" aria-label="LinkedIn">
+          <i class="fa-brands fa-linkedin"></i>
+        </a>
+        <a class="icon-btn" href="https://github.com/celesteisyy" target="_blank" title="GitHub" aria-label="GitHub">
+          <i class="fa-brands fa-github"></i>
+        </a>
+        <a class="icon-btn" href="https://celesteisyy.github.io/playground" target="_blank" title="Playground" aria-label="Playground">
+          <i class="fa-solid fa-flask"></i>
+        </a>
+      </div>
+    </nav>
   </div>
 
-  <!-- Hero Section -->
-  <div class="hero" id="hero">
-    <h1>Yueying (Celeste) Huang</h1>
-    <p>Data enthusiast.</p>
-    <div class="hero-tags">
-      <span class="tag"><i class="fa-solid fa-chart-line"></i> Data Analytics</span>
-      <span class="tag"><i class="fa-solid fa-cookie-bite"></i> Cracker Specialist</span>
-    </div>
-  </div>
+  <main class="container">
+    <section class="hero" id="hero">
+      <div class="hero-inner">
+        <div class="eyebrow">Data • Security • Analytics</div>
+        <h1>Yueying (Celeste) Huang</h1>
+        <p>Data enthusiast.</p>
 
-  <!-- About Section -->
-  <section id="about" class="gradient-bg">
-  <h2>About Me</h2>
-  <div class="about-content">
-    <div class="about-text">
-      <p>Hello! I’m Celeste, a data security engineer with a Master’s degree in Business Analytics from UIUC.</p>
-      <p>My work sits at the intersection of AI/ML and Cybersecurity. I’m comfortable working across the data stack, from SQL-based data wrangling and ETL workflows to Python-based modeling and R-based exploratory analysis.</p>
-      <p>Technically, I work with tools like Python, SQL, R, Tableau, Power BI, and Git. I also have experience with cloud platforms such as AWS, Azure and GCP.</p>
-      <p>I believe that the best insights come from both analytical rigor and a strong sense of curiosity, and I’m always excited to keep learning and building!</p>
-    </div>
-  </div>
-  </section>
-
-
-  <!-- Education Section -->
-  <section id="education" class="gradient-bg">
-    <h2>Education Journey</h2>
-    <div class="education-cards">
-      <div class="edu-card">
-        <strong>University of Illinois Urbana-Champaign</strong>
-        <p>Master of Business Analytics</p>
-        <p>Aug. 2024 – May 2025 | Champaign, USA</p>
-        <p><i class="fa-solid fa-laptop-code"></i> Focused on data architecture, data science, and AI-driven analytics</p>
-      </div>
-      <div class="edu-card">
-        <strong>University of Bristol</strong>
-        <p>Exchange Student in Accounting and Finance</p>
-        <p>Sep. 2023 – May 2024 | Bristol, UK</p>
-        <p><i class="fa-solid fa-globe"></i> Explored global financial systems with an analytical lens</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- Experience Section -->
-  <section id="experience">
-    <h2>Professional Experience</h2>
-    <div class="experience-section">
-      <div class="experience-item">
-        <h3>Cracker Perforation Specialist</h3>
-        <span class="exp-meta">Imaginary Biscuit Labs Co., Ltd | Sep. 2025 – Present</span>
-        <ul>
-          <li>Spearheaded a cross-functional initiative to optimize symmetrical hole distribution across 17+ cracker varieties, ensuring structural integrity and enhanced crunch acoustics.</li>
-          <li>Conducted weekly crackability stress tests using proprietary tongue-pressure simulations and volunteer squirrels (blindfolded, of course).</li>
-          <li>Actively collaborated with the “Cheese Pairing Predictive Model” unit to ensure that perforation did not interfere with optimal cheddar adhesion.</li>
-          <li>Specialized in Hole Defense Architecture (HDA), maintaining zero breach incidents across all snack surfaces under my jurisdiction.</li>
-        </ul>
-      </div>      
-      <div class="experience-item">
-        <h3>Data Analyst</h3>
-        <span class="exp-meta">TrueMetrics (Shenzhen) Consulting Co., Ltd. | Jul. 2025 – Sep. 2025</span>
-        <ul>
-          <li>Transform complex datasets into actionable business insights to support strategic decision-making.</li>
-          <li>Leverage Google Marketing Platform (GMP), especially Google Analytics, to conduct in-depth user behavior analysis and guide client growth strategies.</li>
-          <li>Build and maintain ETL pipelines on Google Cloud Platform (GCP) using BigQuery to support OLAP-style analytics at scale.</li>
-          <li>Design and deploy interactive dashboards in Looker Studio to visualize KPIs, customer journeys, and campaign performance across teams and stakeholders.</li>
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  <!-- Projects Section -->
-  <section id="projects" class="gradient-bg">
-    <h2>My Projects</h2>
-    <div class="projects-container">
-      <div class="project-card">
-        <div class="project-img">
-          <i class="fa-solid fa-robot"></i>
+        <div class="hero-actions">
+          <a class="pill-btn" href="#projects"><i class="fa-solid fa-arrow-right"></i> View Projects</a>
+          <a class="pill-btn" href="mailto:yueying-huang@outllok.com"><i class="fa-solid fa-envelope"></i> Contact Me</a>
         </div>
-        <div class="project-content">
-          <h3>Trading Agent</h3>
-          <p>Developed an automated trading system using assorted agents for market prediction and execution.</p>
-          <a href="https://github.com/celesteisyy/trading_agent" target="_blank" class="project-link">GitHub Repo <i class="fa-solid fa-arrow-right"></i></a>
+
+        <div class="hero-tags">
+          <span class="tag"><i class="fa-solid fa-chart-line"></i> Data Analytics</span>
+          <span class="tag"><i class="fa-solid fa-cookie-bite"></i> Cracker Specialist</span>
         </div>
       </div>
-      <div class="project-card">
-        <div class="project-img">
-          <i class="fa-solid fa-brain"></i>
-        </div>
-        <div class="project-content">
-          <h3>RAG LLM Interface Trial</h3>
-          <p>Experimental project using Retrieval-Augmented Generation for LLM context enhancement and report retrieval.</p>
-          <a href="https://github.com/celesteisyy/RAGtri" target="_blank" class="project-link">GitHub Repo <i class="fa-solid fa-arrow-right"></i></a>
-        </div>
-      </div>
-      <div class="project-card">
-        <div class="project-img">
-          <i class="fa-solid fa-chart-line"></i>
-        </div>
-        <div class="project-content">
-          <h3>Economic Analysis in R</h3>
-          <p>R scripts for in-depth economic analysis covering welfare metrics, labor market evaluation, and macroeconomic trend identification.</p>
-          <a href="https://github.com/celesteisyy/Economic-Analysis-In-R" target="_blank" class="project-link">GitHub Repo <i class="fa-solid fa-arrow-right"></i></a>
-        </div>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- Skills Section -->
-  <section id="skills">
-    <h2>Skills & Knowledge</h2>
-    <div class="skills-container">
-      <div class="skill-category">
-        <h3>Technical Skills</h3>
-        <ul class="skill-list">
-          <li><i class="fa-brands fa-python"></i> Python (Pandas, Scikit-learn, TensorFlow)</li>
-          <li><i class="fa-brands fa-r-project"></i> R (ggplot2, dplyr, tidyr)</li>
-          <li><i class="fa-solid fa-database"></i> SQL & Database Management</li>
-          <li><i class="fa-solid fa-cloud"></i> Google Cloud Platform (BigQuery, Looker Studio) | AWS (S3, EC2, CloudTrail)</li>
-          <li><i class="fa-solid fa-shield-halved"></i> Data Security (ETL hardening, access control, governance)</li>
-          <li><i class="fa-solid fa-chart-simple"></i> Tableau & Data Visualization</li>
-          <li><i class="fa-solid fa-table"></i> Advanced Microsoft Excel</li>
-        </ul>
+    <section id="about">
+      <div class="section-header">
+        <h2>About Me</h2>
       </div>
-      <div class="skill-category">
-        <h3>Languages</h3>
-        <ul class="skill-list">
-          <li><i class="fa-solid fa-comment"></i> Mandarin (Native)</li>
-          <li><i class="fa-solid fa-comment"></i> Cantonese (Fluent)</li>
-          <li><i class="fa-solid fa-comment"></i> English (Proficient)</li>
-          <li><i class="fa-solid fa-comment"></i> Spanish (Beginner)</li>
-        </ul>
+
+      <div class="glass-card about-card">
+        <p>Hello! I’m Celeste, a data security engineer with a Master’s degree in Business Analytics from UIUC.</p>
+        <p>My work sits at the intersection of AI/ML and Cybersecurity. I’m comfortable working across the data stack, from SQL-based data wrangling and ETL workflows to Python-based modeling and R-based exploratory analysis.</p>
+        <p>Technically, I work with tools like Python, SQL, R, Tableau, Power BI, and Git. I also have experience with cloud platforms such as AWS, Azure and GCP.</p>
+        <p>I believe that the best insights come from both analytical rigor and a strong sense of curiosity, and I’m always excited to keep learning and building.</p>
       </div>
-      <div class="skill-category">
-        <h3>Soft Skills</h3>
-        <ul class="skill-list">
-          <li><i class="fa-solid fa-people-group"></i> Team Leadership</li>
-          <li><i class="fa-solid fa-lightbulb"></i> Problem Solving</li>
-          <li><i class="fa-solid fa-brain"></i> Critical Thinking</li>
-          <li><i class="fa-solid fa-book-open"></i> Data Storytelling</li>
-          <li><i class="fa-solid fa-clock"></i> Project Management</li>
-        </ul>
+    </section>
+
+    <section id="education">
+      <div class="section-header">
+        <h2>Education Journey</h2>
       </div>
-    </div>
-  </section>
 
-  <!-- Certifications Section -->
-  <section id="certifications" class="gradient-bg">
-    <h2>Certifications</h2>
-      <a href="https://www.credly.com/badges/40e69ccd-5209-40c1-bbba-6b959694ebe9" 
-        target="_blank">
-        <img src="pics/aws-certified-security-specialty.png" 
-            alt="AWS Certified Security Specialty" 
-            width="150">
-      </a>
-    </div>
-  </section>
+      <div class="education-cards">
+        <div class="edu-card">
+          <strong>University of Illinois Urbana-Champaign</strong>
+          <p>Master of Business Analytics</p>
+          <p>Aug. 2024 – May 2025 | Champaign, USA</p>
+          <p><i class="fa-solid fa-laptop-code"></i> Focused on data architecture, data science, and AI-driven analytics</p>
+        </div>
 
+        <div class="edu-card">
+          <strong>University of Bristol</strong>
+          <p>Exchange Student in Accounting and Finance</p>
+          <p>Sep. 2023 – May 2024 | Bristol, UK</p>
+          <p><i class="fa-solid fa-globe"></i> Explored global financial systems with an analytical lens</p>
+        </div>
+      </div>
+    </section>
 
+    <section id="experience">
+      <div class="section-header">
+        <h2>Professional Experience</h2>
+      </div>
+
+      <div class="experience-section">
+        <div class="experience-item">
+          <h3>Cracker Perforation Specialist</h3>
+          <span class="exp-meta">Imaginary Biscuit Labs Co., Ltd | Sep. 2025 – Present</span>
+          <ul>
+            <li>Spearheaded a cross-functional initiative to optimize symmetrical hole distribution across 17+ cracker varieties, ensuring structural integrity and enhanced crunch acoustics.</li>
+            <li>Conducted weekly crackability stress tests using proprietary tongue-pressure simulations and volunteer squirrels (blindfolded, of course).</li>
+            <li>Actively collaborated with the “Cheese Pairing Predictive Model” unit to ensure that perforation did not interfere with optimal cheddar adhesion.</li>
+            <li>Specialized in Hole Defense Architecture (HDA), maintaining zero breach incidents across all snack surfaces under my jurisdiction.</li>
+          </ul>
+        </div>
+
+        <div class="experience-item">
+          <h3>Data Analyst</h3>
+          <span class="exp-meta">TrueMetrics (Shenzhen) Consulting Co., Ltd. | Jul. 2025 – Sep. 2025</span>
+          <ul>
+            <li>Transform complex datasets into actionable business insights to support strategic decision-making.</li>
+            <li>Leverage Google Marketing Platform (GMP), especially Google Analytics, to conduct in-depth user behavior analysis and guide client growth strategies.</li>
+            <li>Build and maintain ETL pipelines on Google Cloud Platform (GCP) using BigQuery to support OLAP-style analytics at scale.</li>
+            <li>Design and deploy interactive dashboards in Looker Studio to visualize KPIs, customer journeys, and campaign performance across teams and stakeholders.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="projects">
+      <div class="section-header">
+        <h2>My Projects</h2>
+      </div>
+
+      <div class="projects-container">
+        <div class="project-card">
+          <div class="project-img">
+            <i class="fa-solid fa-robot"></i>
+          </div>
+          <div class="project-content">
+            <h3>Trading Agent</h3>
+            <p>Developed an automated trading system using assorted agents for market prediction and execution.</p>
+            <a href="https://github.com/celesteisyy/trading_agent" target="_blank" class="project-link">GitHub Repo <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+        </div>
+
+        <div class="project-card">
+          <div class="project-img">
+            <i class="fa-solid fa-brain"></i>
+          </div>
+          <div class="project-content">
+            <h3>RAG LLM Interface Trial</h3>
+            <p>Experimental project using Retrieval-Augmented Generation for LLM context enhancement and report retrieval.</p>
+            <a href="https://github.com/celesteisyy/RAGtri" target="_blank" class="project-link">GitHub Repo <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+        </div>
+
+        <div class="project-card">
+          <div class="project-img">
+            <i class="fa-solid fa-chart-line"></i>
+          </div>
+          <div class="project-content">
+            <h3>Economic Analysis in R</h3>
+            <p>R scripts for in-depth economic analysis covering welfare metrics, labor market evaluation, and macroeconomic trend identification.</p>
+            <a href="https://github.com/celesteisyy/Economic-Analysis-In-R" target="_blank" class="project-link">GitHub Repo <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="skills">
+      <div class="section-header">
+        <h2>Skills & Knowledge</h2>
+      </div>
+
+      <div class="skills-container">
+        <div class="skill-category">
+          <h3>Technical Skills</h3>
+          <ul class="skill-list">
+            <li><i class="fa-brands fa-python"></i><span>Python (Pandas, Scikit-learn, TensorFlow)</span></li>
+            <li><i class="fa-brands fa-r-project"></i><span>R (ggplot2, dplyr, tidyr)</span></li>
+            <li><i class="fa-solid fa-database"></i><span>SQL & Database Management</span></li>
+            <li><i class="fa-solid fa-cloud"></i><span>Google Cloud Platform (BigQuery, Looker Studio) | AWS (S3, EC2, CloudTrail)</span></li>
+            <li><i class="fa-solid fa-shield-halved"></i><span>Data Security (ETL hardening, access control, governance)</span></li>
+            <li><i class="fa-solid fa-chart-simple"></i><span>Tableau & Data Visualization</span></li>
+            <li><i class="fa-solid fa-table"></i><span>Advanced Microsoft Excel</span></li>
+          </ul>
+        </div>
+
+        <div class="skill-category">
+          <h3>Languages</h3>
+          <ul class="skill-list">
+            <li><i class="fa-solid fa-comment"></i><span>Mandarin (Native)</span></li>
+            <li><i class="fa-solid fa-comment"></i><span>Cantonese (Fluent)</span></li>
+            <li><i class="fa-solid fa-comment"></i><span>English (Proficient)</span></li>
+            <li><i class="fa-solid fa-comment"></i><span>Spanish (Beginner)</span></li>
+          </ul>
+        </div>
+
+        <div class="skill-category">
+          <h3>Soft Skills</h3>
+          <ul class="skill-list">
+            <li><i class="fa-solid fa-people-group"></i><span>Team Leadership</span></li>
+            <li><i class="fa-solid fa-lightbulb"></i><span>Problem Solving</span></li>
+            <li><i class="fa-solid fa-brain"></i><span>Critical Thinking</span></li>
+            <li><i class="fa-solid fa-book-open"></i><span>Data Storytelling</span></li>
+            <li><i class="fa-solid fa-clock"></i><span>Project Management</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="certifications">
+      <div class="section-header">
+        <h2>Certifications</h2>
+      </div>
+
+      <div class="certifications-container">
+        <div class="credly-badge">
+          <a href="https://www.credly.com/badges/40e69ccd-5209-40c1-bbba-6b959694ebe9" target="_blank">
+            <img src="pics/aws-certified-security-specialty.png" alt="AWS Certified Security Specialty" width="150">
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
 
   <footer>
     <p>© 2025 Celeste Huang</p>
     <p>Data Science Enthusiast | Data Analytics | Insight Generation & Decision Support</p>
   </footer>
 
-  <a href="#hero" class="back-to-top" id="backToTop">
+  <a href="#hero" class="back-to-top" id="backToTop" aria-label="Back to top">
     <i class="fa-solid fa-arrow-up"></i>
   </a>
 
@@ -683,26 +750,30 @@
     window.addEventListener('scroll', function() {
       const navbar = document.getElementById('navbar');
       const backToTop = document.getElementById('backToTop');
-      
-      if (window.scrollY > 100) {
+
+      if (window.scrollY > 60) {
         navbar.classList.add('scrolled');
-        backToTop.classList.add('visible');
       } else {
         navbar.classList.remove('scrolled');
+      }
+
+      if (window.scrollY > 300) {
+        backToTop.classList.add('visible');
+      } else {
         backToTop.classList.remove('visible');
       }
     });
-    
+
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
       anchor.addEventListener('click', function(e) {
-        e.preventDefault();
-        
         const targetId = this.getAttribute('href');
         const targetElement = document.querySelector(targetId);
-        
+
         if (targetElement) {
+          e.preventDefault();
+          const top = targetElement.getBoundingClientRect().top + window.pageYOffset - 90;
           window.scrollTo({
-            top: targetElement.offsetTop - 70,
+            top,
             behavior: 'smooth'
           });
         }
