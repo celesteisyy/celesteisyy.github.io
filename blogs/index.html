@@ -4,24 +4,235 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Redirecting to Blogs & Notes</title>
+  <title>Blogs & Notes</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <meta http-equiv="refresh" content="0; url=https://celestesyy.notion.site/Blogs-and-Notes-358cc5022b03802cb837d1a3b9699848?pvs=74" />
+  <style>
+    :root {
+      color-scheme: light dark;
 
-  <link rel="canonical" href="https://celestesyy.notion.site/Blogs-and-Notes-358cc5022b03802cb837d1a3b9699848?pvs=74" />
+      --bg: #f7f8fc;
+      --bg-elevated: rgba(255, 255, 255, 0.72);
+      --card: rgba(255, 255, 255, 0.82);
+      --text: #172033;
+      --muted: #667089;
+      --border: rgba(23, 32, 51, 0.10);
+      --primary: #5b7cff;
+      --primary-soft: rgba(91, 124, 255, 0.10);
+      --accent: #8b6dff;
+      --shadow: 0 10px 30px rgba(27, 39, 78, 0.08);
+      --maxw: 1120px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b1020;
+        --bg-elevated: rgba(255, 255, 255, 0.06);
+        --card: rgba(255, 255, 255, 0.05);
+        --text: #e8eefc;
+        --muted: #a8b2ca;
+        --border: rgba(255, 255, 255, 0.10);
+        --primary: #8aa2ff;
+        --primary-soft: rgba(138, 162, 255, 0.14);
+        --accent: #b29cff;
+        --shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+      }
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 15% 18%, var(--primary-soft), transparent 28%),
+        radial-gradient(circle at 82% 12%, rgba(139, 109, 255, 0.10), transparent 30%),
+        var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    .page-shell {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 14px;
+      gap: 12px;
+    }
+
+    .top-banner {
+      flex: 0 0 auto;
+      width: 100%;
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 16px;
+      border-radius: 24px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .left-group {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .home-button {
+      flex: 0 0 auto;
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      color: var(--text);
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      transition:
+        transform 0.2s ease,
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
+    }
+
+    .home-button:hover {
+      transform: translateY(-1px) scale(1.03);
+      background: var(--primary-soft);
+      border-color: rgba(91, 124, 255, 0.22);
+      color: var(--primary);
+    }
+
+    .title-block {
+      min-width: 0;
+    }
+
+    .title-block h1 {
+      font-size: clamp(1.25rem, 3vw, 1.7rem);
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      white-space: nowrap;
+    }
+
+    .title-block p {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 0.92rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .banner-tag {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 13px;
+      border-radius: 999px;
+      color: var(--muted);
+      background: var(--card);
+      border: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+
+    .notion-wrap {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      background: white;
+    }
+
+    iframe {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: white;
+    }
+
+    @media (max-width: 720px) {
+      .page-shell {
+        padding: 10px;
+        gap: 10px;
+      }
+
+      .top-banner {
+        min-height: 68px;
+        border-radius: 20px;
+        padding: 10px 12px;
+      }
+
+      .home-button {
+        width: 42px;
+        height: 42px;
+      }
+
+      .title-block h1 {
+        font-size: 1.22rem;
+      }
+
+      .title-block p {
+        font-size: 0.84rem;
+        max-width: 62vw;
+      }
+
+      .banner-tag {
+        display: none;
+      }
+
+      .notion-wrap {
+        border-radius: 20px;
+      }
+    }
+  </style>
 </head>
 
 <body>
-  <p>
-    Redirecting to
-    <a href="https://celestesyy.notion.site/Blogs-and-Notes-358cc5022b03802cb837d1a3b9699848?pvs=74">
-      Blogs & Notes
-    </a>
-    ...
-  </p>
+  <div class="page-shell">
+    <header class="top-banner">
+      <div class="left-group">
+        <a class="home-button" href="../index.html" aria-label="Return to home" title="Return to home">
+          <i class="fa-solid fa-house"></i>
+        </a>
 
-  <script>
-    window.location.replace("https://celestesyy.notion.site/Blogs-and-Notes-358cc5022b03802cb837d1a3b9699848?pvs=74");
-  </script>
+        <div class="title-block">
+          <h1>Blogs & Notes</h1>
+          <p>Security reviews, work reflections, and learning notes.</p>
+        </div>
+      </div>
+
+      <div class="banner-tag">
+        <i class="fa-solid fa-pen-nib"></i>
+        <span>Blogs, or so</span>
+      </div>
+    </header>
+
+    <main class="notion-wrap">
+      <iframe
+        src="https://celestesyy.notion.site/ebd//358cc5022b03802cb837d1a3b9699848"
+        allowfullscreen>
+      </iframe>
+    </main>
+  </div>
 </body>
 </html>
