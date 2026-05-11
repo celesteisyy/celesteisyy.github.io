@@ -24,7 +24,6 @@
       --warn: #d9893d;
       --warn-soft: rgba(217, 137, 61, 0.12);
       --shadow: 0 10px 30px rgba(27, 39, 78, 0.08);
-      --maxw: 1120px;
     }
 
     @media (prefers-color-scheme: dark) {
@@ -92,7 +91,7 @@
 
     .top-banner {
       flex: 0 0 auto;
-      min-height: 72px;
+      min-height: 70px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -126,13 +125,13 @@
       flex: 0 0 auto;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
       padding: 9px 13px;
       border-radius: 999px;
       color: var(--muted);
       background: var(--card);
       border: 1px solid var(--border);
       font-size: 0.9rem;
+      white-space: nowrap;
     }
 
     .content {
@@ -173,31 +172,23 @@
       white-space: nowrap;
     }
 
-    .traffic-lights {
+    .bot-icon {
       flex: 0 0 auto;
-      width: 48px;
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      box-shadow: var(--shadow);
     }
 
-    .traffic-lights span {
-      width: 9px;
-      height: 9px;
-      border-radius: 999px;
+    .bot-icon svg {
+      width: 16px;
+      height: 16px;
       display: block;
-    }
-
-    .traffic-lights span:nth-child(1) {
-      background: #ff6b6b;
-    }
-
-    .traffic-lights span:nth-child(2) {
-      background: #f8c66a;
-    }
-
-    .traffic-lights span:nth-child(3) {
-      background: #69d28f;
     }
 
     .status {
@@ -225,7 +216,7 @@
     .prompt-shell {
       position: relative;
       flex: 1 1 auto;
-      min-height: 250px;
+      min-height: 240px;
       background: rgba(255, 255, 255, 0.28);
       overflow: hidden;
     }
@@ -240,7 +231,7 @@
     .masked-view {
       width: 100%;
       height: 100%;
-      min-height: 250px;
+      min-height: 240px;
       border: 0;
       outline: 0;
       resize: none;
@@ -436,13 +427,9 @@
         padding: 11px 12px;
       }
 
-      .window-label {
-        gap: 8px;
-      }
-
-      .traffic-lights {
-        width: 42px;
-        gap: 5px;
+      .bot-icon {
+        width: 26px;
+        height: 26px;
       }
 
       .controls {
@@ -481,10 +468,10 @@
         <div class="prompt-box">
           <div class="prompt-header">
             <div class="window-label">
-              <span class="traffic-lights" aria-hidden="true">
-                <span></span>
-                <span></span>
-                <span></span>
+              <span class="bot-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M8 9.5h8M9 14h.01M15 14h.01M12 5v2.2M7.8 20h8.4c1.68 0 2.52 0 3.16-.33a3 3 0 0 0 1.31-1.31C21 17.72 21 16.88 21 15.2v-4.4c0-1.68 0-2.52-.33-3.16a3 3 0 0 0-1.31-1.31C18.72 6 17.88 6 16.2 6H7.8c-1.68 0-2.52 0-3.16.33a3 3 0 0 0-1.31 1.31C3 8.28 3 9.12 3 10.8v4.4c0 1.68 0 2.52.33 3.16a3 3 0 0 0 1.31 1.31C5.28 20 6.12 20 7.8 20Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
               </span>
               <span>External AI Prompt</span>
             </div>
