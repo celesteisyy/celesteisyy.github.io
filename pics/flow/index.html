@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Redaction Gateway Example</title>
+  <style>
+    :root {
+      --bg: #f7f1e8;
+      --panel: rgba(255, 250, 242, 0.92);
+      --card: #fffaf3;
+      --text: #2f2922;
+      --muted: #756b60;
+      --border: rgba(47, 41, 34, 0.14);
+      --shadow: 0 18px 45px rgba(47, 41, 34, 0.12);
+      --accent: #9a6a43;
+      --accent-dark: #765032;
+      --danger: #b66b3e;
+      --safe: #3e7d5c;
+      --safe-bg: #edf6f1;
+      --warn-bg: #fff2e8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(circle at 12% 18%, rgba(154, 106, 67, 0.16), transparent 28%),
+        radial-gradient(circle at 85% 20%, rgba(62, 125, 92, 0.14), transparent 26%),
+        var(--bg);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      padding: 22px;
+    }
+
+    .wrap {
+      width: min(860px, 100%);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      box-shadow: var(--shadow);
+      padding: 24px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      padding: 7px 11px;
+      border-radius: 999px;
+      background: rgba(154, 106, 67, 0.12);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(22px, 4vw, 32px);
+      line-height: 1.15;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .chat-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 10px 28px rgba(47, 41, 34, 0.08);
+    }
+
+    .chat-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 13px 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.46);
+    }
+
+    .chat-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--danger);
+      box-shadow: 14px 0 0 #dba75f, 28px 0 0 var(--safe);
+    }
+
+    .status {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .status.safe {
+      color: var(--safe);
+    }
+
+    .input-area {
+      padding: 16px;
+    }
+
+    .prompt-shell {
+      position: relative;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.68);
+      overflow: hidden;
+      transition: border-color 220ms ease, box-shadow 220ms ease, background 220ms ease;
+    }
+
+    .prompt-shell.safe {
+      border-color: rgba(62, 125, 92, 0.28);
+      background: var(--safe-bg);
+      box-shadow: 0 0 0 4px rgba(62, 125, 92, 0.08);
+    }
+
+    textarea,
+    .masked-view {
+      width: 100%;
+      min-height: 190px;
+      border: 0;
+      padding: 15px;
+      color: var(--text);
+      font: inherit;
+      font-size: 14px;
+      line-height: 1.6;
+      outline: none;
+      background: transparent;
+    }
+
+    textarea {
+      resize: none;
+      display: block;
+    }
+
+    .masked-view {
+      display: none;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      animation: reveal 420ms ease both;
+    }
+
+    .prompt-shell.sanitized textarea {
+      display: none;
+    }
+
+    .prompt-shell.sanitized .masked-view {
+      display: block;
+    }
+
+    .token {
+      color: var(--safe);
+      font-weight: 900;
+      background: rgba(62, 125, 92, 0.12);
+      border-radius: 8px;
+      padding: 1px 5px;
+    }
+
+    .gateway-overlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 10px;
+      background: rgba(255, 242, 232, 0.92);
+      color: var(--danger);
+      font-size: 13px;
+      font-weight: 900;
+      backdrop-filter: blur(2px);
+      z-index: 5;
+    }
+
+    .gateway-overlay.active {
+      display: flex;
+      animation: fadeIn 220ms ease both;
+    }
+
+    .spinner {
+      width: 22px;
+      height: 22px;
+      border: 3px solid rgba(182, 107, 62, 0.20);
+      border-top-color: var(--danger);
+      border-radius: 999px;
+      animation: spin 1s linear infinite;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 11px 18px;
+      background: var(--accent);
+      color: white;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 9px 22px rgba(154, 106, 67, 0.22);
+      transition: transform 160ms ease, background 160ms ease;
+      white-space: nowrap;
+    }
+
+    button:hover {
+      background: var(--accent-dark);
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.secondary {
+      background: rgba(47, 41, 34, 0.12);
+      color: var(--text);
+      box-shadow: none;
+    }
+
+    .footer {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes reveal {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 640px) {
+      .wrap {
+        padding: 18px;
+        border-radius: 24px;
+      }
+
+      .controls {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="header">
+      <div class="eyebrow">Outbound Prompt Protection</div>
+      <h1>Redact user input before external AI sees it</h1>
+      <p class="subtitle">Click Send to simulate a redaction gateway transforming raw input into a sanitized prompt.</p>
+    </section>
+
+    <section class="chat-box">
+      <div class="chat-top">
+        <div class="chat-title">
+          <span class="dot"></span>
+          External AI Prompt
+        </div>
+        <div class="status" id="status">Drafting</div>
+      </div>
+
+      <div class="input-area">
+        <div class="prompt-shell" id="promptShell">
+          <textarea id="prompt">Please summarize this supplier risk record:
+
+Supplier: Confidential Manufacturing Co. Ltd.
+Contact: Celeste Huang
+Email: celeste.huang@confidentialmanufacturing.com
+Contract Value: $20.26M
+Internal Risk Comment: delayed delivery in Q3; possible financial stress.</textarea>
+
+          <div class="masked-view" id="maskedView"></div>
+
+          <div class="gateway-overlay" id="gatewayOverlay">
+            <span class="spinner"></span>
+            Redaction gateway scanning user input...
+          </div>
+        </div>
+
+        <div class="controls">
+          <div class="note" id="note">
+            The prompt is inspected before it leaves the trusted environment.
+          </div>
+          <button id="sendBtn">Send</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer">
+      The control point is the user input before it leaves the organization, not only after-the-fact monitoring.
+    </div>
+  </main>
+
+  <script>
+    const sendBtn = document.getElementById("sendBtn");
+    const promptBox = document.getElementById("prompt");
+    const promptShell = document.getElementById("promptShell");
+    const maskedView = document.getElementById("maskedView");
+    const gatewayOverlay = document.getElementById("gatewayOverlay");
+    const status = document.getElementById("status");
+    const note = document.getElementById("note");
+
+    let sanitized = false;
+
+    function escapeHTML(value) {
+      return value
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+    }
+
+    function redactPrompt(text) {
+      let safe = escapeHTML(text);
+
+      const replacements = [
+        {
+          pattern: /Confidential Manufacturing Co\. Ltd\./g,
+          token: "[SUPPLIER_001]"
+        },
+        {
+          pattern: /Celeste Huang/g,
+          token: "[PERSON]"
+        },
+        {
+          pattern: /celeste\.huang@confidentialmanufacturing\.com/g,
+          token: "[EMAIL]"
+        },
+        {
+          pattern: /\$20\.26M/g,
+          token: "[CONTRACT_VALUE_RANGE]"
+        },
+        {
+          pattern: /delayed delivery in Q3; possible financial stress\./g,
+          token: "[RISK_SUMMARY_REDACTED]"
+        }
+      ];
+
+      replacements.forEach(({ pattern, token }) => {
+        safe = safe.replace(pattern, `<span class="token">${token}</span>`);
+      });
+
+      return safe;
+    }
+
+    function resetDemo() {
+      sanitized = false;
+      promptShell.classList.remove("sanitized", "safe");
+      maskedView.innerHTML = "";
+      status.textContent = "Drafting";
+      status.classList.remove("safe");
+      note.textContent = "The prompt is inspected before it leaves the trusted environment.";
+      sendBtn.textContent = "Send";
+      sendBtn.classList.remove("secondary");
+    }
+
+    sendBtn.addEventListener("click", () => {
+      if (sanitized) {
+        resetDemo();
+        return;
+      }
+
+      gatewayOverlay.classList.add("active");
+      status.textContent = "Scanning";
+      sendBtn.disabled = true;
+      sendBtn.textContent = "Scanning...";
+
+      setTimeout(() => {
+        maskedView.innerHTML = redactPrompt(promptBox.value);
+        gatewayOverlay.classList.remove("active");
+        promptShell.classList.add("sanitized", "safe");
+        status.textContent = "Sanitized";
+        status.classList.add("safe");
+        note.textContent = "Only the sanitized version would be sent to the external AI model.";
+        sendBtn.disabled = false;
+        sendBtn.textContent = "Reset";
+        sendBtn.classList.add("secondary");
+        sanitized = true;
+      }, 1100);
+    });
+  </script>
+</body>
+</html>
