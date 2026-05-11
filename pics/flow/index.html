@@ -79,21 +79,25 @@
 
     .demo-card {
       width: min(860px, 100%);
+      max-height: calc(100vh - 28px);
       border-radius: 24px;
       background: var(--bg-elevated);
       border: 1px solid var(--border);
       box-shadow: var(--shadow);
       backdrop-filter: blur(12px);
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
 
     .top-banner {
+      flex: 0 0 auto;
       min-height: 72px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 16px;
-      padding: 14px 16px;
+      padding: 14px 18px;
       border-bottom: 1px solid var(--border);
       background: var(--bg-elevated);
     }
@@ -132,18 +136,25 @@
     }
 
     .content {
+      flex: 1 1 auto;
+      min-height: 0;
       padding: 16px;
+      overflow: hidden;
     }
 
     .prompt-box {
+      height: 100%;
       border-radius: 22px;
       background: var(--card);
       border: 1px solid var(--border);
       box-shadow: var(--shadow);
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
 
     .prompt-header {
+      flex: 0 0 auto;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -155,19 +166,38 @@
     .window-label {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       min-width: 0;
       font-size: 0.9rem;
       font-weight: 700;
+      white-space: nowrap;
     }
 
-    .dots {
+    .traffic-lights {
+      flex: 0 0 auto;
+      width: 48px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .traffic-lights span {
       width: 9px;
       height: 9px;
       border-radius: 999px;
+      display: block;
+    }
+
+    .traffic-lights span:nth-child(1) {
       background: #ff6b6b;
-      box-shadow: 14px 0 0 #f8c66a, 28px 0 0 #69d28f;
-      flex: 0 0 auto;
+    }
+
+    .traffic-lights span:nth-child(2) {
+      background: #f8c66a;
+    }
+
+    .traffic-lights span:nth-child(3) {
+      background: #69d28f;
     }
 
     .status {
@@ -179,6 +209,7 @@
       border: 1px solid var(--border);
       font-size: 0.78rem;
       font-weight: 700;
+      white-space: nowrap;
     }
 
     .status.scanning {
@@ -193,8 +224,10 @@
 
     .prompt-shell {
       position: relative;
-      min-height: 230px;
+      flex: 1 1 auto;
+      min-height: 250px;
       background: rgba(255, 255, 255, 0.28);
+      overflow: hidden;
     }
 
     @media (prefers-color-scheme: dark) {
@@ -206,7 +239,8 @@
     textarea,
     .masked-view {
       width: 100%;
-      min-height: 230px;
+      height: 100%;
+      min-height: 250px;
       border: 0;
       outline: 0;
       resize: none;
@@ -216,6 +250,7 @@
       font-family: "Segoe UI", Arial, sans-serif;
       font-size: 0.95rem;
       line-height: 1.55;
+      overflow: auto;
     }
 
     .masked-view {
@@ -256,6 +291,8 @@
       font-size: 0.92rem;
       font-weight: 800;
       z-index: 5;
+      text-align: center;
+      padding: 18px;
     }
 
     .gateway-overlay.active {
@@ -273,6 +310,7 @@
     }
 
     .controls {
+      flex: 0 0 auto;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -301,6 +339,7 @@
         transform 0.2s ease,
         filter 0.2s ease,
         opacity 0.2s ease;
+      white-space: nowrap;
     }
 
     button:hover {
@@ -321,6 +360,7 @@
     }
 
     .footer {
+      flex: 0 0 auto;
       padding: 12px 16px 16px;
       color: var(--muted);
       font-size: 0.82rem;
@@ -363,6 +403,7 @@
 
       .demo-card {
         border-radius: 20px;
+        max-height: calc(100vh - 20px);
       }
 
       .top-banner {
@@ -391,6 +432,19 @@
         border-radius: 18px;
       }
 
+      .prompt-header {
+        padding: 11px 12px;
+      }
+
+      .window-label {
+        gap: 8px;
+      }
+
+      .traffic-lights {
+        width: 42px;
+        gap: 5px;
+      }
+
       .controls {
         align-items: stretch;
         flex-direction: column;
@@ -400,10 +454,10 @@
         width: 100%;
       }
 
+      .prompt-shell,
       textarea,
-      .masked-view,
-      .prompt-shell {
-        min-height: 250px;
+      .masked-view {
+        min-height: 280px;
       }
     }
   </style>
@@ -427,9 +481,14 @@
         <div class="prompt-box">
           <div class="prompt-header">
             <div class="window-label">
-              <span class="dots"></span>
-              External AI Prompt
+              <span class="traffic-lights" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+              </span>
+              <span>External AI Prompt</span>
             </div>
+
             <div class="status" id="status">Drafting</div>
           </div>
 
@@ -456,10 +515,10 @@ Internal Risk Comment: delayed delivery in Q3; possible financial stress.</texta
             </div>
             <button id="sendBtn">Send</button>
           </div>
-        </div>
 
-        <div class="footer">
-          The goal is not only to detect external AI usage, but to transform sensitive input before it leaves the organization.
+          <div class="footer">
+            The goal is not only to detect external AI usage, but to transform sensitive input before it leaves the organization.
+          </div>
         </div>
       </section>
     </section>
@@ -522,7 +581,7 @@ Internal Risk Comment: delayed delivery in Q3; possible financial stress.</texta
       maskedView.innerHTML = "";
       status.textContent = "Drafting";
       status.classList.remove("safe", "scanning");
-      note.textContent = "The prompt is inspected before it leaves the trusted environment.";
+      note.textContent = "Even if user clicked 'send'";
       sendBtn.textContent = "Send";
       sendBtn.classList.remove("secondary");
     }
