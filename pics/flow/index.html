@@ -3,166 +3,226 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Redaction Gateway Example</title>
+  <title>Redaction Gateway Flow</title>
+
   <style>
     :root {
-      --bg: #f7f1e8;
-      --panel: rgba(255, 250, 242, 0.92);
-      --card: #fffaf3;
-      --text: #2f2922;
-      --muted: #756b60;
-      --border: rgba(47, 41, 34, 0.14);
-      --shadow: 0 18px 45px rgba(47, 41, 34, 0.12);
-      --accent: #9a6a43;
-      --accent-dark: #765032;
-      --danger: #b66b3e;
-      --safe: #3e7d5c;
-      --safe-bg: #edf6f1;
-      --warn-bg: #fff2e8;
+      color-scheme: light dark;
+
+      --bg: #f7f8fc;
+      --bg-elevated: rgba(255, 255, 255, 0.72);
+      --card: rgba(255, 255, 255, 0.82);
+      --text: #172033;
+      --muted: #667089;
+      --border: rgba(23, 32, 51, 0.10);
+      --primary: #5b7cff;
+      --primary-soft: rgba(91, 124, 255, 0.10);
+      --accent: #8b6dff;
+      --accent-soft: rgba(139, 109, 255, 0.12);
+      --safe: #2e9f6e;
+      --safe-soft: rgba(46, 159, 110, 0.12);
+      --warn: #d9893d;
+      --warn-soft: rgba(217, 137, 61, 0.12);
+      --shadow: 0 10px 30px rgba(27, 39, 78, 0.08);
+      --maxw: 1120px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b1020;
+        --bg-elevated: rgba(255, 255, 255, 0.06);
+        --card: rgba(255, 255, 255, 0.05);
+        --text: #e8eefc;
+        --muted: #a8b2ca;
+        --border: rgba(255, 255, 255, 0.10);
+        --primary: #8aa2ff;
+        --primary-soft: rgba(138, 162, 255, 0.14);
+        --accent: #b29cff;
+        --accent-soft: rgba(178, 156, 255, 0.14);
+        --safe: #72d6a1;
+        --safe-soft: rgba(114, 214, 161, 0.13);
+        --warn: #f0b36b;
+        --warn-soft: rgba(240, 179, 107, 0.13);
+        --shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+      }
     }
 
     * {
+      margin: 0;
+      padding: 0;
       box-sizing: border-box;
     }
 
+    html,
     body {
-      margin: 0;
+      width: 100%;
+      min-height: 100%;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 15% 18%, var(--primary-soft), transparent 28%),
+        radial-gradient(circle at 82% 12%, rgba(139, 109, 255, 0.10), transparent 30%),
+        var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    .page-shell {
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      background:
-        radial-gradient(circle at 12% 18%, rgba(154, 106, 67, 0.16), transparent 28%),
-        radial-gradient(circle at 85% 20%, rgba(62, 125, 92, 0.14), transparent 26%),
-        var(--bg);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: var(--text);
-      padding: 22px;
+      padding: 14px;
     }
 
-    .wrap {
+    .demo-card {
       width: min(860px, 100%);
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 30px;
-      box-shadow: var(--shadow);
-      padding: 24px;
-    }
-
-    .header {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .eyebrow {
-      display: inline-flex;
-      padding: 7px 11px;
-      border-radius: 999px;
-      background: rgba(154, 106, 67, 0.12);
-      color: var(--accent);
-      font-size: 12px;
-      font-weight: 800;
-      margin-bottom: 10px;
-    }
-
-    h1 {
-      margin: 0 0 8px;
-      font-size: clamp(22px, 4vw, 32px);
-      line-height: 1.15;
-    }
-
-    .subtitle {
-      margin: 0;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    .chat-box {
-      background: var(--card);
-      border: 1px solid var(--border);
       border-radius: 24px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
       overflow: hidden;
-      box-shadow: 0 10px 28px rgba(47, 41, 34, 0.08);
     }
 
-    .chat-top {
+    .top-banner {
+      min-height: 72px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 13px 16px;
+      gap: 16px;
+      padding: 14px 16px;
       border-bottom: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.46);
+      background: var(--bg-elevated);
     }
 
-    .chat-title {
+    .title-block {
+      min-width: 0;
+    }
+
+    .title-block h1 {
+      font-size: clamp(1.18rem, 3vw, 1.65rem);
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      white-space: nowrap;
+    }
+
+    .title-block p {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 0.92rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .banner-tag {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 13px;
+      border-radius: 999px;
+      color: var(--muted);
+      background: var(--card);
+      border: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+
+    .content {
+      padding: 16px;
+    }
+
+    .prompt-box {
+      border-radius: 22px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .prompt-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .window-label {
       display: flex;
       align-items: center;
       gap: 8px;
-      font-weight: 800;
-      font-size: 13px;
+      min-width: 0;
+      font-size: 0.9rem;
+      font-weight: 700;
     }
 
-    .dot {
+    .dots {
       width: 9px;
       height: 9px;
       border-radius: 999px;
-      background: var(--danger);
-      box-shadow: 14px 0 0 #dba75f, 28px 0 0 var(--safe);
+      background: #ff6b6b;
+      box-shadow: 14px 0 0 #f8c66a, 28px 0 0 #69d28f;
+      flex: 0 0 auto;
     }
 
     .status {
+      flex: 0 0 auto;
+      padding: 6px 10px;
+      border-radius: 999px;
       color: var(--muted);
-      font-size: 12px;
-      font-weight: 800;
+      background: var(--card);
+      border: 1px solid var(--border);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .status.scanning {
+      color: var(--warn);
+      background: var(--warn-soft);
     }
 
     .status.safe {
       color: var(--safe);
-    }
-
-    .input-area {
-      padding: 16px;
+      background: var(--safe-soft);
     }
 
     .prompt-shell {
       position: relative;
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      background: rgba(255, 255, 255, 0.68);
-      overflow: hidden;
-      transition: border-color 220ms ease, box-shadow 220ms ease, background 220ms ease;
+      min-height: 230px;
+      background: rgba(255, 255, 255, 0.28);
     }
 
-    .prompt-shell.safe {
-      border-color: rgba(62, 125, 92, 0.28);
-      background: var(--safe-bg);
-      box-shadow: 0 0 0 4px rgba(62, 125, 92, 0.08);
+    @media (prefers-color-scheme: dark) {
+      .prompt-shell {
+        background: rgba(0, 0, 0, 0.10);
+      }
     }
 
     textarea,
     .masked-view {
       width: 100%;
-      min-height: 190px;
+      min-height: 230px;
       border: 0;
-      padding: 15px;
-      color: var(--text);
-      font: inherit;
-      font-size: 14px;
-      line-height: 1.6;
-      outline: none;
-      background: transparent;
-    }
-
-    textarea {
+      outline: 0;
       resize: none;
-      display: block;
+      padding: 16px;
+      background: transparent;
+      color: var(--text);
+      font-family: "Segoe UI", Arial, sans-serif;
+      font-size: 0.95rem;
+      line-height: 1.55;
     }
 
     .masked-view {
       display: none;
       white-space: pre-wrap;
       overflow-wrap: anywhere;
-      animation: reveal 420ms ease both;
+      animation: rise 0.35s ease both;
     }
 
     .prompt-shell.sanitized textarea {
@@ -174,11 +234,12 @@
     }
 
     .token {
-      color: var(--safe);
-      font-weight: 900;
-      background: rgba(62, 125, 92, 0.12);
+      display: inline-block;
+      padding: 1px 6px;
       border-radius: 8px;
-      padding: 1px 5px;
+      color: var(--safe);
+      background: var(--safe-soft);
+      font-weight: 800;
     }
 
     .gateway-overlay {
@@ -189,26 +250,26 @@
       justify-content: center;
       flex-direction: column;
       gap: 10px;
-      background: rgba(255, 242, 232, 0.92);
-      color: var(--danger);
-      font-size: 13px;
-      font-weight: 900;
-      backdrop-filter: blur(2px);
+      color: var(--warn);
+      background: color-mix(in srgb, var(--bg) 82%, transparent);
+      backdrop-filter: blur(5px);
+      font-size: 0.92rem;
+      font-weight: 800;
       z-index: 5;
     }
 
     .gateway-overlay.active {
       display: flex;
-      animation: fadeIn 220ms ease both;
+      animation: fade 0.2s ease both;
     }
 
     .spinner {
-      width: 22px;
-      height: 22px;
-      border: 3px solid rgba(182, 107, 62, 0.20);
-      border-top-color: var(--danger);
+      width: 24px;
+      height: 24px;
       border-radius: 999px;
-      animation: spin 1s linear infinite;
+      border: 3px solid var(--warn-soft);
+      border-top-color: var(--warn);
+      animation: spin 0.9s linear infinite;
     }
 
     .controls {
@@ -216,69 +277,118 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      margin-top: 12px;
+      padding: 12px 14px 14px;
+      border-top: 1px solid var(--border);
     }
 
     .note {
       color: var(--muted);
-      font-size: 12px;
+      font-size: 0.84rem;
       line-height: 1.45;
     }
 
     button {
+      flex: 0 0 auto;
       border: 0;
       border-radius: 999px;
-      padding: 11px 18px;
-      background: var(--accent);
+      padding: 10px 16px;
       color: white;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      box-shadow: var(--shadow);
       font-weight: 800;
       cursor: pointer;
-      box-shadow: 0 9px 22px rgba(154, 106, 67, 0.22);
-      transition: transform 160ms ease, background 160ms ease;
-      white-space: nowrap;
+      transition:
+        transform 0.2s ease,
+        filter 0.2s ease,
+        opacity 0.2s ease;
     }
 
     button:hover {
-      background: var(--accent-dark);
       transform: translateY(-1px);
+      filter: brightness(1.04);
     }
 
-    button:active {
-      transform: translateY(0);
+    button:disabled {
+      opacity: 0.7;
+      cursor: wait;
+      transform: none;
     }
 
     button.secondary {
-      background: rgba(47, 41, 34, 0.12);
       color: var(--text);
-      box-shadow: none;
+      background: var(--card);
+      border: 1px solid var(--border);
     }
 
     .footer {
-      margin-top: 14px;
+      padding: 12px 16px 16px;
       color: var(--muted);
-      font-size: 12px;
+      font-size: 0.82rem;
+      line-height: 1.45;
       text-align: center;
-      line-height: 1.5;
     }
 
     @keyframes spin {
-      to { transform: rotate(360deg); }
+      to {
+        transform: rotate(360deg);
+      }
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+    @keyframes fade {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
     }
 
-    @keyframes reveal {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
-    @media (max-width: 640px) {
-      .wrap {
-        padding: 18px;
-        border-radius: 24px;
+    @media (max-width: 720px) {
+      .page-shell {
+        padding: 10px;
+      }
+
+      .demo-card {
+        border-radius: 20px;
+      }
+
+      .top-banner {
+        min-height: 68px;
+        padding: 12px;
+      }
+
+      .title-block h1 {
+        font-size: 1.18rem;
+      }
+
+      .title-block p {
+        font-size: 0.84rem;
+        max-width: 70vw;
+      }
+
+      .banner-tag {
+        display: none;
+      }
+
+      .content {
+        padding: 12px;
+      }
+
+      .prompt-box {
+        border-radius: 18px;
       }
 
       .controls {
@@ -289,29 +399,42 @@
       button {
         width: 100%;
       }
+
+      textarea,
+      .masked-view,
+      .prompt-shell {
+        min-height: 250px;
+      }
     }
   </style>
 </head>
+
 <body>
-  <main class="wrap">
-    <section class="header">
-      <div class="eyebrow">Outbound Prompt Protection</div>
-      <h1>Redact user input before external AI sees it</h1>
-      <p class="subtitle">Click Send to simulate a redaction gateway transforming raw input into a sanitized prompt.</p>
-    </section>
-
-    <section class="chat-box">
-      <div class="chat-top">
-        <div class="chat-title">
-          <span class="dot"></span>
-          External AI Prompt
+  <main class="page-shell">
+    <section class="demo-card">
+      <header class="top-banner">
+        <div class="title-block">
+          <h1>Redaction Gateway Flow</h1>
+          <p>Protect user input before it reaches an external AI model.</p>
         </div>
-        <div class="status" id="status">Drafting</div>
-      </div>
 
-      <div class="input-area">
-        <div class="prompt-shell" id="promptShell">
-          <textarea id="prompt">Please summarize this supplier risk record:
+        <div class="banner-tag">
+          Outbound Prompt Control
+        </div>
+      </header>
+
+      <section class="content">
+        <div class="prompt-box">
+          <div class="prompt-header">
+            <div class="window-label">
+              <span class="dots"></span>
+              External AI Prompt
+            </div>
+            <div class="status" id="status">Drafting</div>
+          </div>
+
+          <div class="prompt-shell" id="promptShell">
+            <textarea id="prompt">Please summarize this supplier risk record:
 
 Supplier: Confidential Manufacturing Co. Ltd.
 Contact: Celeste Huang
@@ -319,26 +442,27 @@ Email: celeste.huang@confidentialmanufacturing.com
 Contract Value: $20.26M
 Internal Risk Comment: delayed delivery in Q3; possible financial stress.</textarea>
 
-          <div class="masked-view" id="maskedView"></div>
+            <div class="masked-view" id="maskedView"></div>
 
-          <div class="gateway-overlay" id="gatewayOverlay">
-            <span class="spinner"></span>
-            Redaction gateway scanning user input...
+            <div class="gateway-overlay" id="gatewayOverlay">
+              <span class="spinner"></span>
+              Redaction gateway scanning user input...
+            </div>
+          </div>
+
+          <div class="controls">
+            <div class="note" id="note">
+              The prompt is inspected before it leaves the trusted environment.
+            </div>
+            <button id="sendBtn">Send</button>
           </div>
         </div>
 
-        <div class="controls">
-          <div class="note" id="note">
-            The prompt is inspected before it leaves the trusted environment.
-          </div>
-          <button id="sendBtn">Send</button>
+        <div class="footer">
+          The goal is not only to detect external AI usage, but to transform sensitive input before it leaves the organization.
         </div>
-      </div>
+      </section>
     </section>
-
-    <div class="footer">
-      The control point is the user input before it leaves the organization, not only after-the-fact monitoring.
-    </div>
   </main>
 
   <script>
@@ -394,10 +518,10 @@ Internal Risk Comment: delayed delivery in Q3; possible financial stress.</texta
 
     function resetDemo() {
       sanitized = false;
-      promptShell.classList.remove("sanitized", "safe");
+      promptShell.classList.remove("sanitized");
       maskedView.innerHTML = "";
       status.textContent = "Drafting";
-      status.classList.remove("safe");
+      status.classList.remove("safe", "scanning");
       note.textContent = "The prompt is inspected before it leaves the trusted environment.";
       sendBtn.textContent = "Send";
       sendBtn.classList.remove("secondary");
@@ -411,21 +535,25 @@ Internal Risk Comment: delayed delivery in Q3; possible financial stress.</texta
 
       gatewayOverlay.classList.add("active");
       status.textContent = "Scanning";
+      status.classList.add("scanning");
       sendBtn.disabled = true;
       sendBtn.textContent = "Scanning...";
 
       setTimeout(() => {
         maskedView.innerHTML = redactPrompt(promptBox.value);
         gatewayOverlay.classList.remove("active");
-        promptShell.classList.add("sanitized", "safe");
+        promptShell.classList.add("sanitized");
+
         status.textContent = "Sanitized";
+        status.classList.remove("scanning");
         status.classList.add("safe");
+
         note.textContent = "Only the sanitized version would be sent to the external AI model.";
         sendBtn.disabled = false;
         sendBtn.textContent = "Reset";
         sendBtn.classList.add("secondary");
         sanitized = true;
-      }, 1100);
+      }, 1050);
     });
   </script>
 </body>
