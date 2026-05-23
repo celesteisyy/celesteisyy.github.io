@@ -646,6 +646,8 @@
     --flow-main: #8aa2ff;
     --flow-glow: #a9bcff;
     --flow-admin: #b29cff;
+    --flow-system: #68e1d4;
+    --flow-system-glow: #8cf5ea;
   }
 
   html[data-theme="light"] {
@@ -681,6 +683,8 @@
     --flow-main: #5b7cff;
     --flow-glow: #7fa1ff;
     --flow-admin: #8b6dff;
+    --flow-system: #2fb8a6;
+    --flow-system-glow: #5bd6c8;
   }
 
   body {
@@ -1110,6 +1114,50 @@
     margin: 0 !important;
   }
 
+
+  /* ===== System / Service Flow semantic layer ===== */
+  .line.system {
+    stroke: var(--flow-system) !important;
+    stroke-dasharray: 8 7;
+    opacity: .84;
+  }
+
+  .stream.system {
+    stroke: var(--flow-system-glow) !important;
+    stroke-dasharray: 18 86 !important;
+    animation: flowForward 2.05s linear infinite !important;
+    opacity: .82 !important;
+    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--flow-system) 42%, transparent)) !important;
+  }
+
+  .stream.system.reverse {
+    animation-name: flowReverse !important;
+  }
+
+  .legend-svg .legend-base.system {
+    stroke: var(--flow-system);
+    stroke-dasharray: 7 6;
+    opacity: .86;
+  }
+
+  .legend-svg .legend-flow.system {
+    stroke: var(--flow-system-glow);
+    stroke-width: 4.6;
+    stroke-dasharray: 14 68;
+    animation-duration: 1.6s;
+    filter: drop-shadow(0 0 5px color-mix(in srgb, var(--flow-system) 48%, transparent));
+  }
+
+
+  /* ===== Legend Fit Check: four legend rows fit in footer card ===== */
+  .footer-card .legend-item {
+    margin-bottom: 8px !important;
+  }
+
+  .footer-card .legend-svg {
+    height: 20px;
+  }
+
 </style>
 </head>
 
@@ -1118,7 +1166,7 @@
   <div class="fit-stage" id="fitStage">
   <div class="board" id="diagramBoard">
     <h1>Fund System Security Architecture</h1>
-    <div class="subtitle">Segmented fund-system architecture with isolated bank connectivity, controlled operations access, and DMZ boundary protection.</div>
+    <div class="subtitle">Segmented fund-system architecture with separated business access, system service flows, controlled operations access, and DMZ boundary protection.</div>
 
     <div class="main">
       <div class="glass office">
@@ -1174,7 +1222,7 @@
       <div class="subnet dmz-zone dmz-subnet">
         <div class="label-chip narrow">
           <span class="lock purple"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
-          <span>DMZ Subnet<br>(Public)</span>
+          <span>DMZ Subnet</span>
         </div>
       </div>
 
@@ -1185,8 +1233,8 @@
         <path class="line" d="M178 188 H420"/>
         <path class="stream" d="M178 188 H420"/>
 
-        <path class="line" d="M484 231 V292"/>
-        <path class="stream" d="M484 231 V292"/>
+        <path class="line system" d="M484 231 V292"/>
+        <path class="stream system" d="M484 231 V292"/>
 
         <path class="line" d="M815 184 H890"/>
         <path class="stream" d="M815 184 H890"/>
@@ -1199,10 +1247,10 @@
         <path class="line" d="M548 196 H655"/>
         <path class="stream reverse" d="M655 196 H548"/>
 
-        <path class="line" d="M710 231 V262 H840 V500 H815"/>
-        <path class="stream" d="M710 231 V262 H840 V500 H815"/>
-        <path class="line" d="M815 516 H856 V278 H728 V231"/>
-        <path class="stream" d="M815 516 H856 V278 H728 V231"/>
+        <path class="line system" d="M710 231 V262 H840 V500 H815"/>
+        <path class="stream system" d="M710 231 V262 H840 V500 H815"/>
+        <path class="line system" d="M728 231 V278 H856 V516 H815"/>
+        <path class="stream system reverse" d="M728 231 V278 H856 V516 H815"/>
 
         <path class="line" d="M1045 310 H1115"/>
         <path class="stream" d="M1045 310 H1115"/>
@@ -1327,6 +1375,14 @@
 
         <div class="legend-item">
           <svg class="legend-svg" viewBox="0 0 92 18" aria-hidden="true">
+            <path class="legend-base system" d="M4 9 H88"/>
+            <path class="legend-flow system" d="M4 9 H88"/>
+          </svg>
+          <div>System / Service Flow</div>
+        </div>
+
+        <div class="legend-item">
+          <svg class="legend-svg" viewBox="0 0 92 18" aria-hidden="true">
             <path class="legend-base admin" d="M4 9 H88"/>
             <path class="legend-flow admin" d="M4 9 H88"/>
           </svg>
@@ -1354,7 +1410,7 @@
         <div class="bullet-item"><span class="subnet-key key-green"></span><span>Application Subnet (Apps/Core)</span></div>
         <div class="bullet-item"><span class="subnet-key key-blue"></span><span>Database Subnet (Private)</span></div>
         <div class="bullet-item"><span class="subnet-key key-orange"></span><span>Bank Connectivity Subnet</span></div>
-        <div class="bullet-item"><span class="subnet-key key-purple"></span><span>DMZ Subnet (Public)</span></div>
+        <div class="bullet-item"><span class="subnet-key key-purple"></span><span>DMZ Subnet</span></div>
       </div>
     </div>
 
