@@ -36,7 +36,8 @@
 
   .board{
     width:1480px;
-    min-height:990px;
+    min-height:1090px;
+    height:1090px;
     margin:0 auto;
     position:relative;
     border-radius:26px;
@@ -1158,6 +1159,64 @@
     height: 20px;
   }
 
+
+  /* ===== Final Full Contain Fit for Notion Embed ===== */
+  html,
+  body {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body {
+    display: block !important;
+  }
+
+  .page {
+    width: 100vw !important;
+    height: 100vh !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+  }
+
+  .fit-stage {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .board {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 1480px !important;
+    min-height: 1090px !important;
+    height: 1090px !important;
+    margin: 0 !important;
+    transform-origin: top left !important;
+    overflow: hidden !important;
+  }
+
+  @media (max-width: 1200px) {
+    body {
+      padding: 0 !important;
+    }
+
+    .board {
+      width: 1480px !important;
+    }
+  }
+
 </style>
 </head>
 
@@ -1422,6 +1481,10 @@
 
 <script>
 (function () {
+  const DESIGN_W = 1480;
+  const DESIGN_H = 1090;
+  const SAFE_PAD = 10;
+
   const root = document.documentElement;
   const stage = document.getElementById("fitStage");
   const board = document.getElementById("diagramBoard");
@@ -1429,6 +1492,7 @@
 
   const params = new URLSearchParams(window.location.search);
   const requestedTheme = params.get("theme");
+  const fitMode = params.get("fit") || "contain";
 
   if (requestedTheme === "light" || requestedTheme === "dark") {
     root.setAttribute("data-theme", requestedTheme);
@@ -1444,46 +1508,34 @@
     toggle.textContent = theme === "dark" ? "Dark" : "Light";
   }
 
-  function getNaturalBoardSize() {
-    const previousTransform = board.style.transform;
-    board.style.transform = "none";
-
-    const width = Math.max(
-      board.scrollWidth,
-      board.offsetWidth,
-      board.getBoundingClientRect().width,
-      1480
-    );
-
-    const height = Math.max(
-      board.scrollHeight,
-      board.offsetHeight,
-      board.getBoundingClientRect().height,
-      990
-    );
-
-    board.style.transform = previousTransform;
-    return { width, height };
-  }
-
   function fit() {
-    const vw = Math.max(320, window.innerWidth || document.documentElement.clientWidth);
-    const vh = Math.max(320, window.innerHeight || document.documentElement.clientHeight);
+    const vw = Math.max(240, window.innerWidth || document.documentElement.clientWidth || 240);
+    const vh = Math.max(240, window.innerHeight || document.documentElement.clientHeight || 240);
 
-    const safePad = 24;
-    const { width, height } = getNaturalBoardSize();
+    const availableW = Math.max(1, vw - SAFE_PAD * 2);
+    const availableH = Math.max(1, vh - SAFE_PAD * 2);
 
-    const scale = Math.min(
-      (vw - safePad) / width,
-      (vh - safePad) / height
-    );
+    let scale;
+    if (fitMode === "width") {
+      scale = availableW / DESIGN_W;
+    } else if (fitMode === "height") {
+      scale = availableH / DESIGN_H;
+    } else {
+      scale = Math.min(availableW / DESIGN_W, availableH / DESIGN_H);
+    }
 
-    const scaledW = width * scale;
-    const scaledH = height * scale;
+    const scaledW = DESIGN_W * scale;
+    const scaledH = DESIGN_H * scale;
+    const x = Math.max(0, (vw - scaledW) / 2);
+    const y = Math.max(0, (vh - scaledH) / 2);
 
+    board.style.width = DESIGN_W + "px";
+    board.style.minHeight = DESIGN_H + "px";
     board.style.transformOrigin = "top left";
-    board.style.transform = `translate(${Math.max(0, (vw - scaledW) / 2)}px, ${Math.max(0, (vh - scaledH) / 2)}px) scale(${scale})`;
-    stage.style.height = `${vh}px`;
+    board.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+
+    stage.style.width = vw + "px";
+    stage.style.height = vh + "px";
   }
 
   toggle.addEventListener("click", () => {
@@ -1495,6 +1547,12 @@
 
   window.addEventListener("resize", fit, { passive: true });
   window.addEventListener("orientationchange", fit, { passive: true });
+
+  if (window.ResizeObserver) {
+    const ro = new ResizeObserver(() => requestAnimationFrame(fit));
+    ro.observe(document.documentElement);
+    ro.observe(document.body);
+  }
 
   if (document.fonts && document.fonts.ready) {
     document.fonts.ready.then(() => requestAnimationFrame(fit));
