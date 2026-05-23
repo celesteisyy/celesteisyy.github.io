@@ -895,7 +895,7 @@
 
   .stream.admin {
     stroke-dasharray: 18 86 !important;
-    animation: flowForward 2s linear infinite !important;
+    animation: flowForward 2.6s linear infinite !important;
     opacity: 0.84 !important;
   }
 
@@ -1062,8 +1062,8 @@
   .legend-svg .legend-flow.admin {
     stroke: var(--flow-admin);
     stroke-width: 4.6;
-    stroke-dasharray: 14 68;
-    animation-duration: 1.55s;
+    stroke-dasharray: 20 78;
+    animation-duration: 2.35s;
     filter: drop-shadow(0 0 5px color-mix(in srgb, var(--flow-admin) 48%, transparent));
   }
 
@@ -1126,7 +1126,7 @@
   .stream.system {
     stroke: var(--flow-system-glow) !important;
     stroke-dasharray: 18 86 !important;
-    animation: flowForward 2.05s linear infinite !important;
+    animation: flowForward 2.6s linear infinite !important;
     opacity: .82 !important;
     filter: drop-shadow(0 0 6px color-mix(in srgb, var(--flow-system) 42%, transparent)) !important;
   }
@@ -1144,8 +1144,8 @@
   .legend-svg .legend-flow.system {
     stroke: var(--flow-system-glow);
     stroke-width: 4.6;
-    stroke-dasharray: 14 68;
-    animation-duration: 1.6s;
+    stroke-dasharray: 20 78;
+    animation-duration: 2.45s;
     filter: drop-shadow(0 0 5px color-mix(in srgb, var(--flow-system) 48%, transparent));
   }
 
@@ -1215,6 +1215,46 @@
     .board {
       width: 1480px !important;
     }
+  }
+
+
+  /* ===== Main Diagram Dashed Flow Polish v12 =====
+     Keep legend animation unchanged. Smooth only the in-diagram dashed flows. */
+  .flow-layer .line.system,
+  .flow-layer .line.admin {
+    stroke-dasharray: 10 9 !important;
+    opacity: 0.66 !important;
+  }
+
+  .flow-layer .stream.system,
+  .flow-layer .stream.admin {
+    stroke-dasharray: 42 210 !important;
+    stroke-width: 4.2 !important;
+    opacity: 0.58 !important;
+    animation: mainDashedFlowForward 3.45s linear infinite !important;
+  }
+
+  .flow-layer .stream.system.reverse,
+  .flow-layer .stream.admin.reverse {
+    animation-name: mainDashedFlowReverse !important;
+  }
+
+  .flow-layer .stream.system {
+    stroke: var(--flow-system-glow) !important;
+    filter: drop-shadow(0 0 4px color-mix(in srgb, var(--flow-system) 32%, transparent)) !important;
+  }
+
+  .flow-layer .stream.admin {
+    stroke: var(--flow-admin) !important;
+    filter: drop-shadow(0 0 4px color-mix(in srgb, var(--flow-admin) 34%, transparent)) !important;
+  }
+
+  @keyframes mainDashedFlowForward {
+    to { stroke-dashoffset: -252; }
+  }
+
+  @keyframes mainDashedFlowReverse {
+    to { stroke-dashoffset: 252; }
   }
 
 </style>
