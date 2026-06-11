@@ -65,7 +65,7 @@ function createSession() {
     messages: [
       {
         role: "system",
-        content: "小 Cyssie is awake. Start a new conversation whenever you are ready."
+        content: "Cyssie is awake. Start a new conversation whenever you are ready."
       }
     ]
   };
@@ -259,7 +259,7 @@ clearChatButton.addEventListener("click", async () => {
   session.messages = [
     {
       role: "system",
-      content: "Session cleared. 小 Cyssie is ready again."
+      content: "Session cleared. Cyssie is ready again."
     }
   ];
 
