@@ -18,6 +18,24 @@ const tokenInput = document.getElementById("tokenInput");
 const saveTokenButton = document.getElementById("saveTokenButton");
 const activeTitle = document.getElementById("activeTitle");
 
+const imageInput = document.createElement("input");
+imageInput.type = "file";
+imageInput.accept = "image/jpeg,image/jpg,image/png,image/webp";
+imageInput.style.display = "none";
+
+const imageButton = document.createElement("button");
+imageButton.type = "button";
+imageButton.className = "image-button";
+imageButton.textContent = "Image";
+imageButton.title = "Upload an image";
+
+let selectedImageFile = null;
+
+if (form && sendButton) {
+  form.insertBefore(imageInput, sendButton);
+  form.insertBefore(imageButton, sendButton);
+}
+
 let sessions = loadSessions();
 let activeSessionId = localStorage.getItem(ACTIVE_KEY);
 
@@ -185,8 +203,25 @@ function buildHistoryForApi(session) {
     }));
 }
 
-async function sendMessage(message) {
-  addMessageToSession("user", message);
+function getSelectedImageLabel() {
+  if (!selectedImageFile) return "";
+
+  return `[Image uploaded: ${selectedImageFile.name}]`;
+}
+
+function clearSelectedImage() {
+  selectedImageFile = null;
+  imageInput.value = "";
+  imageButton.textContent = "Image";
+  imageButton.classList.remove("has-image");
+}
+
+async function sendMessage(message, imageFile = null) {
+  const userDisplay = imageFile
+    ? `${message || ""}${message ? "\n" : ""}${getSelectedImageLabel()}`
+    : message;
+
+  addMessageToSession("user", userDisplay);
   addMessageToSession("bot", "Cyssie is thinking...");
   render();
 
@@ -194,6 +229,7 @@ async function sendMessage(message) {
   const loadingMessage = session.messages[session.messages.length - 1];
 
   sendButton.disabled = true;
+  imageButton.disabled = true;
 
   try {
     const token = getToken();
@@ -203,17 +239,33 @@ async function sendMessage(message) {
       throw new Error("Missing access token");
     }
 
-    const response = await fetch(`${API_BASE}/chat`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        message,
-        history: buildHistoryForApi(session)
-      })
-    });
+    let response;
+
+    if (imageFile) {
+      const formData = new FormData();
+      formData.append("message", message || "What is in this image?");
+      formData.append("image", imageFile);
+
+      response = await fetch(`${API_BASE}/vision`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        },
+        body: formData
+      });
+    } else {
+      response = await fetch(`${API_BASE}/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          message,
+          history: buildHistoryForApi(session)
+        })
+      });
+    }
 
     if (response.status === 401) {
       openTokenModal();
@@ -221,30 +273,52 @@ async function sendMessage(message) {
     }
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(errorText || `HTTP ${response.status}`);
     }
 
     const data = await response.json();
     loadingMessage.content = data.response || "(No response)";
   } catch (error) {
-    loadingMessage.content = `Cyssie could not respond: ${error.message}`;
+    console.error(error);
+    loadingMessage.content = "Cyssie's off to grab some coffee — come find her a little later!";
   } finally {
     session.updatedAt = Date.now();
     saveSessions();
     render();
     sendButton.disabled = false;
+    imageButton.disabled = false;
     input.focus();
   }
 }
+
+imageButton.addEventListener("click", () => {
+  imageInput.click();
+});
+
+imageInput.addEventListener("change", () => {
+  selectedImageFile = imageInput.files && imageInput.files[0] ? imageInput.files[0] : null;
+
+  if (selectedImageFile) {
+    imageButton.textContent = `Image: ${selectedImageFile.name}`;
+    imageButton.classList.add("has-image");
+  } else {
+    clearSelectedImage();
+  }
+});
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   const message = input.value.trim();
-  if (!message) return;
+  const imageFile = selectedImageFile;
+
+  if (!message && !imageFile) return;
 
   input.value = "";
-  await sendMessage(message);
+  clearSelectedImage();
+
+  await sendMessage(message, imageFile);
 });
 
 newChatButton.addEventListener("click", () => {
