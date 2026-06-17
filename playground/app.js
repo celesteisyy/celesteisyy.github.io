@@ -164,6 +164,30 @@ function formatTime(timestamp) {
   });
 }
 
+function escapeHtml(text) {
+  return String(text || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function renderMarkdown(content) {
+  const text = String(content || "");
+
+  if (window.marked && window.DOMPurify) {
+    marked.setOptions({
+      breaks: true,
+      gfm: true
+    });
+
+    return DOMPurify.sanitize(marked.parse(text));
+  }
+
+  return escapeHtml(text).replaceAll("\n", "<br>");
+}
+
 function renderMessages() {
   const session = getActiveSession();
 
@@ -173,7 +197,14 @@ function renderMessages() {
   session.messages.forEach((message) => {
     const div = document.createElement("div");
     div.className = `msg ${message.role}`;
-    div.textContent = message.content;
+
+    if (message.role === "bot") {
+      div.classList.add("markdown-body");
+      div.innerHTML = renderMarkdown(message.content);
+    } else {
+      div.textContent = message.content;
+    }
+
     chat.appendChild(div);
   });
 
@@ -203,10 +234,10 @@ function buildHistoryForApi(session) {
     }));
 }
 
-function getSelectedImageLabel() {
-  if (!selectedImageFile) return "";
+function getImageLabel(imageFile) {
+  if (!imageFile) return "";
 
-  return `[Image uploaded: ${selectedImageFile.name}]`;
+  return `[Image uploaded: ${imageFile.name}]`;
 }
 
 function clearSelectedImage() {
@@ -218,7 +249,7 @@ function clearSelectedImage() {
 
 async function sendMessage(message, imageFile = null) {
   const userDisplay = imageFile
-    ? `${message || ""}${message ? "\n" : ""}${getSelectedImageLabel()}`
+    ? `${message || ""}${message ? "\n" : ""}${getImageLabel(imageFile)}`
     : message;
 
   addMessageToSession("user", userDisplay);
