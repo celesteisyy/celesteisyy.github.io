@@ -2,7 +2,6 @@ const API_BASE = "https://18-118-248-231.sslip.io";
 
 const STORAGE_KEY = "cyssie.sessions.v1";
 const ACTIVE_KEY = "cyssie.activeSessionId.v1";
-const TOKEN_KEY = "cyssie.accessToken.v1";
 
 const chat = document.getElementById("chat");
 const sessionsEl = document.getElementById("sessions");
@@ -277,6 +276,9 @@ async function readStreamingResponse(response, loadingMessage, session) {
   }
 
   loadingMessage.content = fullText || "(No response)";
+  session.updatedAt = Date.now();
+  saveSessions();
+  render();
 }
 
 
