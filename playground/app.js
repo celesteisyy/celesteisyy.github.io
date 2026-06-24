@@ -211,8 +211,10 @@ function renderMessages() {
   chat.scrollTop = chat.scrollHeight;
 }
 
+let accessToken = "";
+
 function getToken() {
-  return localStorage.getItem(TOKEN_KEY) || "";
+  return accessToken;
 }
 
 function openTokenModal() {
@@ -408,7 +410,8 @@ saveTokenButton.addEventListener("click", () => {
   const token = tokenInput.value.trim();
 
   if (token) {
-    localStorage.setItem(TOKEN_KEY, token);
+    accessToken = token;
+    tokenInput.value = "";
   }
 
   closeTokenModal();
