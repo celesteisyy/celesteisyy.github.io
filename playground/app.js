@@ -249,11 +249,40 @@ function clearSelectedImage() {
   imageButton.classList.remove("has-image");
 }
 
-async function sendMessage(message, imageFile = null) {
-  const userDisplay = imageFile
-    ? `${message || ""}${message ? "\n" : ""}${getImageLabel(imageFile)}`
-    : message;
+async function readStreamingResponse(response, loadingMessage, session) {
+  if (!response.body) {
+    loadingMessage.content = await response.text();
+    return;
+  }
 
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+  let fullText = "";
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+
+    fullText += decoder.decode(value, { stream: true });
+    loadingMessage.content = fullText || "Cyssie is thinking...";
+    session.updatedAt = Date.now();
+    saveSessions();
+    render();
+  }
+
+  const tail = decoder.decode();
+  if (tail) {
+    fullText += tail;
+    loadingMessage.content = fullText;
+  }
+
+  loadingMessage.content = fullText || "(No response)";
+}
+
+
+async function sendMessage(message, imageFile = null) {
+  const historyForApi = buildHistoryForApi(getActiveSession());
+  const userDisplay = imageFile ? `${message || ""}${message ? "\n" : ""}${getImageLabel(imageFile)}` : message;
   addMessageToSession("user", userDisplay);
   addMessageToSession("bot", "Cyssie is thinking...");
   render();
@@ -287,16 +316,13 @@ async function sendMessage(message, imageFile = null) {
         body: formData
       });
     } else {
-      response = await fetch(`${API_BASE}/chat`, {
+      response = await fetch(`${API_BASE}/chat_stream`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({
-          message,
-          history: buildHistoryForApi(session)
-        })
+        body: JSON.stringify({ message, history: historyForApi })
       });
     }
 
@@ -310,8 +336,12 @@ async function sendMessage(message, imageFile = null) {
       throw new Error(errorText || `HTTP ${response.status}`);
     }
 
-    const data = await response.json();
-    loadingMessage.content = data.response || "(No response)";
+    if (imageFile) {
+      const data = await response.json();
+      loadingMessage.content = data.response || "(No response)";
+    } else {
+      await readStreamingResponse(response, loadingMessage, session);
+    }
   } catch (error) {
     console.error(error);
     loadingMessage.content = "Cyssie's off to grab some coffee — come find her a little later!";
