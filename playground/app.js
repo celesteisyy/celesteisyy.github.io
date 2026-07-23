@@ -4,6 +4,8 @@ const ACTIVE_KEY = "cyssie.activeSessionId.v1";
 const RECENT_HISTORY_TURNS = 16;
 const COMPACTION_BATCH_TURNS = 4;
 const COMPACTION_BATCH_CHARS = 60000;
+const STREAM_RENDER_INTERVAL_MS = 80;
+const STREAM_SAVE_INTERVAL_MS = 750;
 
 let accessToken = "";
 let selectedImageFile = null;
@@ -23,7 +25,14 @@ function loadSessions() {
 }
 
 function saveSessions() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+  } catch (error) {
+    console.warn(
+      "Cyssie could not persist the latest local conversation state.",
+      error
+    );
+  }
 }
 
 function getToken() {
@@ -366,6 +375,44 @@ document.addEventListener("DOMContentLoaded", () => {
     const reader = response.body.getReader();
     const decoder = new TextDecoder("utf-8");
     let fullText = "";
+    let lastRenderAt = 0;
+    let lastSaveAt = 0;
+
+    function updateStreamingView(force = false) {
+      const now = performance.now();
+
+      if (force || now - lastSaveAt >= STREAM_SAVE_INTERVAL_MS) {
+        saveSessions();
+        lastSaveAt = now;
+      }
+
+      if (!force && now - lastRenderAt < STREAM_RENDER_INTERVAL_MS) {
+        return;
+      }
+
+      lastRenderAt = now;
+
+      if (activeSessionId !== session.id) {
+        return;
+      }
+
+      const messageIndex = session.messages.indexOf(loadingMessage);
+      const messageElement = messageIndex >= 0 ? chat.children[messageIndex] : null;
+
+      if (!messageElement) {
+        renderMessages();
+        return;
+      }
+
+      if (force) {
+        messageElement.style.whiteSpace = "";
+        messageElement.innerHTML = renderMarkdown(loadingMessage.content);
+      } else {
+        messageElement.style.whiteSpace = "pre-wrap";
+        messageElement.textContent = loadingMessage.content;
+      }
+      chat.scrollTop = chat.scrollHeight;
+    }
 
     while (true) {
       const { value, done } = await reader.read();
@@ -374,8 +421,7 @@ document.addEventListener("DOMContentLoaded", () => {
       fullText += decoder.decode(value, { stream: true });
       loadingMessage.content = fullText || "Cyssie is thinking...";
       session.updatedAt = Date.now();
-      saveSessions();
-      render();
+      updateStreamingView();
     }
 
     const tail = decoder.decode();
@@ -385,8 +431,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     loadingMessage.content = fullText || "(No response)";
     session.updatedAt = Date.now();
-    saveSessions();
-    render();
+    updateStreamingView(true);
   }
 
   async function sendMessage(message, imageFile = null) {
@@ -462,7 +507,14 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } catch (error) {
       console.error(error);
-      loadingMessage.content = "Cyssie's off to grab some coffee — come find her a little later!";
+      const partialText = (
+        loadingMessage.content
+        && loadingMessage.content !== "Cyssie is thinking..."
+      ) ? loadingMessage.content : "";
+
+      loadingMessage.content = partialText
+        ? `${partialText}\n\n[Cyssie's connection was interrupted before this answer finished.]`
+        : "Cyssie's off to grab some coffee — come find her a little later!";
     } finally {
       session.updatedAt = Date.now();
       saveSessions();
