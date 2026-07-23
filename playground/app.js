@@ -248,6 +248,15 @@ document.addEventListener("DOMContentLoaded", () => {
       .replaceAll("'", "&#039;");
   }
 
+  function isSafeRenderedUrl(value) {
+    try {
+      const url = new URL(value, window.location.href);
+      return ["http:", "https:", "mailto:"].includes(url.protocol);
+    } catch {
+      return false;
+    }
+  }
+
   function renderMarkdown(content) {
     const text = String(content || "");
 
@@ -257,7 +266,31 @@ document.addEventListener("DOMContentLoaded", () => {
         gfm: true
       });
 
-      return DOMPurify.sanitize(marked.parse(text));
+      const sanitized = DOMPurify.sanitize(marked.parse(text), {
+        FORBID_TAGS: [
+          "img", "picture", "video", "audio", "source", "track",
+          "iframe", "object", "embed", "form", "input", "button"
+        ],
+        FORBID_ATTR: ["srcset", "poster", "formaction"]
+      });
+      const template = document.createElement("template");
+      template.innerHTML = sanitized;
+
+      template.content.querySelectorAll("a").forEach((link) => {
+        const href = link.getAttribute("href") || "";
+        if (!isSafeRenderedUrl(href)) {
+          link.removeAttribute("href");
+          link.removeAttribute("target");
+          link.removeAttribute("rel");
+          return;
+        }
+        if (new URL(href, window.location.href).protocol !== "mailto:") {
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+        }
+      });
+
+      return template.innerHTML;
     }
 
     return escapeHtml(text).replaceAll("\n", "<br>");
