@@ -22,7 +22,7 @@
 
   <main class="container">
     <section class="workspace">
-      <aside class="sidebar">
+      <aside class="sidebar" id="sessionSidebar">
         <div class="sidebar-head">
           <span class="eyebrow">Tiny AI Agent</span>
           <h1>Cyssie Playground</h1>
@@ -43,8 +43,11 @@
 
       <section class="chat-shell">
         <div class="chat-topbar">
-          <div class="window-dots">
-            <span></span><span></span><span></span>
+          <div class="topbar-start">
+            <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-controls="sessionSidebar" aria-expanded="true">Sessions</button>
+            <div class="window-dots" aria-hidden="true">
+              <span></span><span></span><span></span>
+            </div>
           </div>
           <div class="chat-title" id="activeTitle">cyssie_session.md</div>
           <div class="top-actions">
