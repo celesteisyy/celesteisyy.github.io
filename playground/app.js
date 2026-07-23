@@ -6,6 +6,8 @@ const COMPACTION_BATCH_TURNS = 4;
 const COMPACTION_BATCH_CHARS = 60000;
 const STREAM_RENDER_INTERVAL_MS = 80;
 const STREAM_SAVE_INTERVAL_MS = 750;
+const SIDEBAR_COLLAPSED_KEY = "cyssie.sidebarCollapsed.v1";
+const MOBILE_SIDEBAR_BREAKPOINT = 860;
 
 let accessToken = "";
 let selectedImageFile = null;
@@ -53,6 +55,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const tokenInput = document.getElementById("tokenInput");
   const saveTokenButton = document.getElementById("saveTokenButton");
   const activeTitle = document.getElementById("activeTitle");
+  const workspace = document.querySelector(".workspace");
+  const sidebarToggle = document.getElementById("sidebarToggle");
 
   const requiredElements = {
     chat,
@@ -67,7 +71,9 @@ document.addEventListener("DOMContentLoaded", () => {
     tokenModal,
     tokenInput,
     saveTokenButton,
-    activeTitle
+    activeTitle,
+    workspace,
+    sidebarToggle
   };
 
   const missing = Object.entries(requiredElements)
@@ -105,10 +111,35 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem(ACTIVE_KEY, activeSessionId);
   }
 
+  const savedSidebarState = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+  const initialSidebarCollapsed = savedSidebarState === null
+    ? window.matchMedia(`(max-width: ${MOBILE_SIDEBAR_BREAKPOINT}px)`).matches
+    : savedSidebarState === "true";
+
+  setSidebarCollapsed(initialSidebarCollapsed, false);
+  autoResizeInput();
   render();
 
   if (!getToken()) {
     openTokenModal();
+  }
+
+  function setSidebarCollapsed(collapsed, persist = true) {
+    workspace.classList.toggle("sidebar-collapsed", collapsed);
+    sidebarToggle.setAttribute("aria-expanded", String(!collapsed));
+    sidebarToggle.textContent = collapsed ? "Show sessions" : "Hide sessions";
+
+    if (persist) {
+      localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(collapsed));
+    }
+  }
+
+  function autoResizeInput() {
+    input.style.height = "auto";
+    const maxHeight = Number.parseFloat(getComputedStyle(input).maxHeight) || 160;
+    const nextHeight = Math.min(input.scrollHeight, maxHeight);
+    input.style.height = `${nextHeight}px`;
+    input.style.overflowY = input.scrollHeight > maxHeight ? "auto" : "hidden";
   }
 
   function getActiveSession() {
@@ -525,6 +556,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  sidebarToggle.addEventListener("click", () => {
+    setSidebarCollapsed(!workspace.classList.contains("sidebar-collapsed"));
+  });
+
+  input.addEventListener("input", autoResizeInput);
+
   imageButton.addEventListener("click", () => {
     imageInput.click();
   });
@@ -554,6 +591,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     input.value = "";
+    autoResizeInput();
     clearSelectedImage();
 
     await sendMessage(message, imageFile);
