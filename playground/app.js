@@ -1,6 +1,9 @@
 const API_BASE = "https://18-118-248-231.sslip.io";
 const STORAGE_KEY = "cyssie.sessions.v1";
 const ACTIVE_KEY = "cyssie.activeSessionId.v1";
+const RECENT_HISTORY_TURNS = 16;
+const COMPACTION_BATCH_TURNS = 4;
+const COMPACTION_BATCH_CHARS = 60000;
 
 let accessToken = "";
 let selectedImageFile = null;
@@ -109,6 +112,8 @@ document.addEventListener("DOMContentLoaded", () => {
       title: "New chat",
       createdAt: Date.now(),
       updatedAt: Date.now(),
+      contextSummary: "",
+      summarizedMessageCount: 0,
       messages: [
         {
           role: "system",
@@ -264,6 +269,79 @@ document.addEventListener("DOMContentLoaded", () => {
       }));
   }
 
+  function getRecentHistoryStart(history, recentTurns = RECENT_HISTORY_TURNS) {
+    const userIndexes = history
+      .map((message, index) => message.role === "user" ? index : -1)
+      .filter((index) => index >= 0);
+
+    if (userIndexes.length <= recentTurns) return 0;
+    return userIndexes[userIndexes.length - recentTurns];
+  }
+
+  function countUserTurns(history) {
+    return history.filter((message) => message.role === "user").length;
+  }
+
+  function historyCharacterCount(history) {
+    return history.reduce(
+      (total, message) => total + String(message.content || "").length,
+      0
+    );
+  }
+
+  async function prepareConversationContext(session, history, token) {
+    const recentStart = getRecentHistoryStart(history);
+    const savedCount = Number.isInteger(session.summarizedMessageCount)
+      ? session.summarizedMessageCount
+      : 0;
+    const summaryCursor = Math.max(0, Math.min(savedCount, recentStart));
+    const messagesToCompact = history.slice(summaryCursor, recentStart);
+    const shouldCompact = (
+      countUserTurns(messagesToCompact) >= COMPACTION_BATCH_TURNS
+      || historyCharacterCount(messagesToCompact) >= COMPACTION_BATCH_CHARS
+    );
+
+    session.contextSummary = String(session.contextSummary || "");
+    session.summarizedMessageCount = summaryCursor;
+
+    if (shouldCompact) {
+      try {
+        const compactResponse = await fetch(`${API_BASE}/context/compact`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            history: messagesToCompact,
+            conversation_summary: session.contextSummary
+          })
+        });
+
+        if (!compactResponse.ok) {
+          throw new Error(`Context compaction failed with HTTP ${compactResponse.status}`);
+        }
+
+        const compacted = await compactResponse.json();
+        session.contextSummary = String(compacted.conversation_summary || "");
+        session.summarizedMessageCount = recentStart;
+        saveSessions();
+      } catch (error) {
+        console.warn("Cyssie could not compact older history; using recent turns.", error);
+
+        return {
+          conversationSummary: session.contextSummary,
+          history: history.slice(recentStart)
+        };
+      }
+    }
+
+    return {
+      conversationSummary: session.contextSummary,
+      history: history.slice(session.summarizedMessageCount)
+    };
+  }
+
   function getImageLabel(imageFile) {
     if (!imageFile) return "";
 
@@ -317,7 +395,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const historyForApi = buildHistoryForApi(getActiveSession());
+    const historyBeforeSend = buildHistoryForApi(getActiveSession());
     const userDisplay = imageFile ? `${message || ""}${message ? "\n" : ""}${getImageLabel(imageFile)}` : message;
     addMessageToSession("user", userDisplay);
     addMessageToSession("bot", "Cyssie is thinking...");
@@ -346,13 +424,23 @@ document.addEventListener("DOMContentLoaded", () => {
           body: formData
         });
       } else {
+        const preparedContext = await prepareConversationContext(
+          session,
+          historyBeforeSend,
+          token
+        );
+
         response = await fetch(`${API_BASE}/chat_stream`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`
           },
-          body: JSON.stringify({ message, history: historyForApi })
+          body: JSON.stringify({
+            message,
+            history: preparedContext.history,
+            conversation_summary: preparedContext.conversationSummary
+          })
         });
       }
 
@@ -437,6 +525,8 @@ document.addEventListener("DOMContentLoaded", () => {
         content: "Session cleared. Cyssie is ready again."
       }
     ];
+    session.contextSummary = "";
+    session.summarizedMessageCount = 0;
 
     session.updatedAt = Date.now();
     saveSessions();
