@@ -269,9 +269,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const sanitized = DOMPurify.sanitize(marked.parse(text), {
         FORBID_TAGS: [
           "img", "picture", "video", "audio", "source", "track",
-          "iframe", "object", "embed", "form", "input", "button"
+          "iframe", "object", "embed", "form", "input", "button",
+          "svg", "math", "image", "use"
         ],
-        FORBID_ATTR: ["srcset", "poster", "formaction"]
+        FORBID_ATTR: [
+          "style", "ping", "srcset", "poster", "formaction", "xlink:href"
+        ]
       });
       const template = document.createElement("template");
       template.innerHTML = sanitized;
