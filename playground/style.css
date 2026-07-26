@@ -60,9 +60,8 @@ a {
 }
 
 .nav-wrap {
-    position: sticky;
-    top: 14px;
-    z-index: 100;
+    position: relative;
+    z-index: 10;
     padding: 14px 18px 0;
 }
 
@@ -131,15 +130,12 @@ nav {
 }
 
 .workspace.sidebar-collapsed {
-    grid-template-columns: 0 minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     gap: 0;
 }
 
 .workspace.sidebar-collapsed .sidebar {
-    visibility: hidden;
-    opacity: 0;
-    pointer-events: none;
-    transform: translateX(-14px);
+    display: none;
 }
 
 .sidebar,
