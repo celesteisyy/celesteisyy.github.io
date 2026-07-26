@@ -127,7 +127,14 @@ document.addEventListener("DOMContentLoaded", () => {
   function setSidebarCollapsed(collapsed, persist = true) {
     workspace.classList.toggle("sidebar-collapsed", collapsed);
     sidebarToggle.setAttribute("aria-expanded", String(!collapsed));
-    sidebarToggle.textContent = collapsed ? "Show sessions" : "Hide sessions";
+    const toggleLabel = collapsed ? "Show sessions" : "Hide sessions";
+    sidebarToggle.setAttribute("aria-label", toggleLabel);
+    sidebarToggle.title = toggleLabel;
+
+    const accessibleLabel = sidebarToggle.querySelector(".sr-only");
+    if (accessibleLabel) {
+      accessibleLabel.textContent = toggleLabel;
+    }
 
     if (persist) {
       localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(collapsed));
@@ -428,6 +435,7 @@ document.addEventListener("DOMContentLoaded", () => {
     selectedImageFile = null;
     imageInput.value = "";
     imageButton.textContent = "Image";
+    imageButton.title = "Upload an image";
     imageButton.classList.remove("has-image");
   }
 
@@ -606,7 +614,8 @@ document.addEventListener("DOMContentLoaded", () => {
     selectedImageFile = imageInput.files && imageInput.files[0] ? imageInput.files[0] : null;
 
     if (selectedImageFile) {
-      imageButton.textContent = `Image: ${selectedImageFile.name}`;
+      imageButton.textContent = "Image ✓";
+      imageButton.title = `Selected: ${selectedImageFile.name}. Click to replace.`;
       imageButton.classList.add("has-image");
     } else {
       clearSelectedImage();
