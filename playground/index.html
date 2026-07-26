@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cyssie Playground</title>
-  <link rel="stylesheet" href="./style.css?v=20260726-2" />
+  <link rel="stylesheet" href="./style.css?v=20260726-3" />
 </head>
 
 <body>
@@ -41,10 +41,22 @@
         </div>
       </aside>
 
+      <button
+        class="sidebar-toggle"
+        id="sidebarToggle"
+        type="button"
+        aria-controls="sessionSidebar"
+        aria-expanded="true"
+        aria-label="Hide sessions"
+        title="Hide sessions"
+      >
+        <span class="sidebar-toggle-icon" aria-hidden="true"></span>
+        <span class="sr-only">Hide sessions</span>
+      </button>
+
       <section class="chat-shell">
         <div class="chat-topbar">
           <div class="topbar-start">
-            <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-controls="sessionSidebar" aria-expanded="true">Sessions</button>
             <div class="window-dots" aria-hidden="true">
               <span></span><span></span><span></span>
             </div>
@@ -77,6 +89,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.7/dist/purify.min.js"></script>
-  <script src="app.js?v=20260726-2"></script>
+  <script src="app.js?v=20260726-3"></script>
 </body>
 </html>
