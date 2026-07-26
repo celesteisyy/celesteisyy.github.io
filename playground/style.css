@@ -313,7 +313,7 @@ button:disabled {
 .sidebar-toggle {
     position: absolute;
     z-index: 6;
-    top: 210px;
+    top: 50%;
     left: 311px;
     width: 36px;
     height: 36px;
