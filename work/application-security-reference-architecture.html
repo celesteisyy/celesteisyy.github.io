@@ -44,15 +44,15 @@
   const W=1480,H=1080,P=10,b=document.getElementById('board'),r=document.documentElement,t=document.getElementById('themeToggle'),layer=document.getElementById('flowLayer'),q=new URLSearchParams(location.search).get('theme');
   if(q==='light'||q==='dark')r.dataset.theme=q;
   const flows=[
-    ['users','right','gateway','left',''],['gateway','right','web','left',''],['web','right','api','left',''],['api','right','store','left',''],
-    ['web','bottom','identity','top','system'],['api','bottom','worker','top','system reverse'],['worker','right','connector','left','system'],
-    ['connector','right','externalSystems','left',''],['admins','right','bastion','left','admin'],['bastion','right','identity','left','admin']
+    ['users','right','gateway','left','',211],['gateway','right','web','left','',211],['web','right','api','left','',211],['api','right','store','left','',211],
+    ['web','bottom','identity','top','system'],['api','bottom','worker','top','system reverse'],
+    ['admins','right','bastion','left','admin',447],['bastion','right','identity','left','admin',447],['identity','right','worker','left','system',447],['worker','right','connector','left','system',447],['connector','right','externalSystems','left','',447]
   ];
   const normal={left:[-1,0],right:[1,0],top:[0,-1],bottom:[0,1]};
   function anchor(id,side){const e=document.getElementById(id),x=e.offsetLeft,y=e.offsetTop,w=e.offsetWidth,h=e.offsetHeight;return side==='left'?[x,y+h/2]:side==='right'?[x+w,y+h/2]:side==='top'?[x+w/2,y]:[x+w/2,y+h]}
   function route(a,sa,z,sz){const h1=sa==='left'||sa==='right',h2=sz==='left'||sz==='right';if(h1&&h2&&Math.abs(a[1]-z[1])<2)return`M${a[0]} ${a[1]}H${z[0]}`;if(!h1&&!h2&&Math.abs(a[0]-z[0])<2)return`M${a[0]} ${a[1]}V${z[1]}`;const n1=normal[sa],n2=normal[sz],p1=[a[0]+n1[0]*24,a[1]+n1[1]*24],p2=[z[0]+n2[0]*24,z[1]+n2[1]*24];let d=`M${a[0]} ${a[1]}L${p1[0]} ${p1[1]}`;if(h1&&h2){const m=(p1[0]+p2[0])/2;d+=`H${m}V${p2[1]}H${p2[0]}`}else if(!h1&&!h2){const m=(p1[1]+p2[1])/2;d+=`V${m}H${p2[0]}V${p2[1]}`}else if(h1){d+=`H${p2[0]}V${p2[1]}`}else{d+=`V${p2[1]}H${p2[0]}`}return d+`L${z[0]} ${z[1]}`}
   function path(d,cls){const p=document.createElementNS('http://www.w3.org/2000/svg','path');p.setAttribute('d',d);p.setAttribute('class',cls.trim());return p}
-  function draw(){layer.replaceChildren();for(const [from,sa,to,sz,type] of flows){const d=route(anchor(from,sa),sa,anchor(to,sz),sz),base=type.replace('reverse','').trim();layer.append(path(d,`line ${base}`),path(d,`stream ${type}`))}}
+  function draw(){layer.replaceChildren();for(const [from,sa,to,sz,type,lane] of flows){const a=anchor(from,sa),z=anchor(to,sz),d=Number.isFinite(lane)?`M${a[0]} ${lane}H${z[0]}`:route(a,sa,z,sz),base=type.replace('reverse','').trim();layer.append(path(d,`line ${base}`),path(d,`stream ${type}`))}}
   function fit(){const s=Math.min((innerWidth-P*2)/W,(innerHeight-P*2)/H),x=(innerWidth-W*s)/2,y=(innerHeight-H*s)/2;b.style.transform=`translate(${Math.max(0,x)}px,${Math.max(0,y)}px) scale(${s})`}
   function label(){t.textContent=r.dataset.theme==='dark'?'Dark':'Light'}
   t.onclick=()=>{r.dataset.theme=r.dataset.theme==='dark'?'light':'dark';label();fit()};addEventListener('resize',fit,{passive:true});
