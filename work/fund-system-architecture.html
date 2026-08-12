@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fund System Security Architecture</title>
+<style>
+  :root{
+    --ink:#102033;
+    --muted:#52647a;
+    --blue:#2563eb;
+    --green:#37864a;
+    --db:#1687e8;
+    --orange:#d88900;
+    --purple:#7047c8;
+    --red:#dc2626;
+    --border:rgba(255,255,255,.86);
+    --shadow:0 18px 46px rgba(58,79,120,.13), inset 0 1px 0 rgba(255,255,255,.72);
+  }
+
+  *{box-sizing:border-box}
+
+  body{
+    margin:0;
+    padding:18px;
+    min-height:100vh;
+    font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 18% 10%,rgba(147,197,253,.38),transparent 28%),
+      radial-gradient(circle at 82% 78%,rgba(196,181,253,.26),transparent 30%),
+      linear-gradient(135deg,#f8fbff 0%,#edf6ff 48%,#f8f5ff 100%);
+  }
+
+  .page{width:100%;overflow-x:auto}
+
+  .board{
+    width:1480px;
+    min-height:1090px;
+    height:1090px;
+    margin:0 auto;
+    position:relative;
+    border-radius:26px;
+    padding:18px;
+    background:rgba(255,255,255,.36);
+    border:1px solid rgba(255,255,255,.78);
+    box-shadow:0 24px 70px rgba(44,62,96,.14), inset 0 1px 0 rgba(255,255,255,.7);
+    backdrop-filter:blur(18px) saturate(140%);
+    overflow:hidden;
+  }
+
+  h1{
+    margin:0;
+    font-size:22px;
+    font-weight:820;
+    letter-spacing:-.02em;
+  }
+
+  .subtitle{
+    margin-top:6px;
+    font-size:13px;
+    color:var(--muted);
+    font-weight:540;
+  }
+
+  .main{
+    position:relative;
+    width:1444px;
+    height:710px;
+    margin-top:16px;
+  }
+
+  .glass{
+    position:absolute;
+    border-radius:18px;
+    background:linear-gradient(180deg,rgba(255,255,255,.68),rgba(255,255,255,.40));
+    border:1px solid var(--border);
+    box-shadow:var(--shadow);
+    backdrop-filter:blur(16px) saturate(140%);
+    -webkit-backdrop-filter:blur(16px) saturate(140%);
+  }
+
+  .office{left:0;top:0;width:220px;height:610px;box-shadow:var(--shadow),inset 0 0 0 1.5px rgba(37,99,235,.65)}
+  .enterprise{left:250px;top:0;width:840px;height:610px;box-shadow:var(--shadow),inset 0 0 0 1.4px rgba(15,23,42,.68)}
+  .external{left:1298px;top:0;width:138px;height:610px;box-shadow:var(--shadow),inset 0 0 0 1.4px rgba(15,23,42,.62)}
+
+  .inner-boundary{
+    position:absolute;
+    left:275px;
+    top:64px;
+    width:596px;
+    height:512px;
+    border:1.6px dashed rgba(87,105,132,.44);
+    border-radius:8px;
+    background:rgba(255,255,255,.06);
+  }
+
+  .zone-title{
+    position:absolute;
+    left:18px;
+    top:16px;
+    font-size:18px;
+    font-weight:820;
+    color:#0f172a;
+  }
+
+  .office-title-icon{
+    display:inline-grid;
+    place-items:center;
+    width:36px;
+    height:36px;
+    margin-right:10px;
+    border-radius:10px;
+    background:#2563eb;
+    color:white;
+    vertical-align:middle;
+  }
+
+  .office-sep{position:absolute;left:32px;right:32px;top:350px;border-top:1px dashed rgba(37,99,235,.45)}
+
+  .subnet{
+    position:absolute;
+    border-radius:16px;
+    background:linear-gradient(180deg,rgba(255,255,255,.54),rgba(255,255,255,.24));
+    border:1px solid rgba(255,255,255,.82);
+    box-shadow:0 14px 34px rgba(74,94,128,.11), inset 0 1px 0 rgba(255,255,255,.7);
+    backdrop-filter:blur(14px) saturate(135%);
+  }
+
+  .app{border-color:rgba(63,143,78,.56);background:linear-gradient(180deg,rgba(222,255,236,.60),rgba(255,255,255,.30))}
+  .db-zone{border-color:rgba(22,135,232,.58);background:linear-gradient(180deg,rgba(219,241,255,.68),rgba(255,255,255,.32))}
+  .bank-zone{border-color:rgba(224,144,0,.60);background:linear-gradient(180deg,rgba(255,240,210,.68),rgba(255,255,255,.32))}
+  .dmz-zone{border-color:rgba(111,67,197,.58);background:linear-gradient(180deg,rgba(238,232,255,.68),rgba(255,255,255,.32))}
+  .ops-zone{border-color:rgba(100,116,139,.62);background:linear-gradient(180deg,rgba(238,242,247,.78),rgba(255,255,255,.34))}
+
+  .business-apps{left:355px;top:74px;width:460px;height:174px}
+  .core-apps{left:355px;top:292px;width:460px;height:120px}
+  .bastion-zone{left:285px;top:430px;width:165px;height:140px}
+  .database-zone{left:500px;top:430px;width:315px;height:140px}
+  .bank-subnet{left:890px;top:112px;width:175px;height:460px}
+  .dmz-subnet{left:1100px;top:0;width:165px;height:610px}
+
+  .label-chip{
+    position:absolute;
+    left:12px;
+    top:12px;
+    z-index:4;
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    min-height:38px;
+    padding:5px 10px 5px 6px;
+    border-radius:12px;
+    background:rgba(255,255,255,.58);
+    border:1px solid rgba(255,255,255,.88);
+    box-shadow:0 8px 20px rgba(67,82,110,.08);
+    font-size:14px;
+    font-weight:820;
+    color:#102033;
+    line-height:1.2;
+  }
+
+  .label-chip.narrow{right:12px}
+  .lock{
+    width:34px;
+    height:34px;
+    border-radius:9px;
+    display:grid;
+    place-items:center;
+    color:white;
+    flex:0 0 auto;
+  }
+
+  .lock.green{background:linear-gradient(180deg,#60b56f,#2f8f46)}
+  .lock.blue{background:linear-gradient(180deg,#54a6f7,#1687e8)}
+  .lock.orange{background:linear-gradient(180deg,#f4b342,#d98200)}
+  .lock.purple{background:linear-gradient(180deg,#9b79f0,#6f43c5)}
+  .lock svg{width:18px;height:18px;stroke:white;fill:none;stroke-width:2}
+
+  .node{
+    position:absolute;
+    z-index:5;
+    display:grid;
+    justify-items:center;
+    align-content:center;
+    text-align:center;
+    color:#0f172a;
+  }
+
+  .node-title{font-size:15px;font-weight:820;line-height:1.25}
+  .node-sub{margin-top:6px;font-size:12px;color:#374151;line-height:1.35;font-weight:540}
+
+  .office-user{left:42px;top:148px;width:136px}
+  .office-ops{left:42px;top:422px;width:136px}
+  .bank-service{left:910px;top:270px;width:135px}
+  .gateway{left:1115px;top:270px;width:135px}
+  .bank-system{left:1316px;top:275px;width:100px}
+
+  .app-card{
+    position:absolute;
+    z-index:5;
+    width:128px;
+    height:86px;
+    border-radius:14px;
+    background:rgba(255,255,255,.58);
+    border:1px solid rgba(255,255,255,.88);
+    box-shadow:0 10px 24px rgba(67,82,110,.09);
+    display:grid;
+    justify-items:center;
+    align-content:center;
+    gap:7px;
+    text-align:center;
+  }
+
+  .oa-card{left:420px;top:145px}
+  .fund-card{left:655px;top:145px}
+  .bastion-card{left:300px;top:454px;width:135px;height:104px}
+  .db-card{left:592px;top:490px;width:130px;height:72px}
+
+  .tile-title{font-size:14px;font-weight:820;line-height:1.18;color:#102033}
+
+  .external-title{
+    position:absolute;
+    top:24px;
+    left:0;
+    width:100%;
+    text-align:center;
+    font-size:22px;
+    font-weight:820;
+    line-height:1.25;
+  }
+
+  .icon{width:46px;height:46px;stroke:#102a5e;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 8px 10px rgba(30,64,175,.12))}
+  .icon.large{width:58px;height:58px}
+  .icon.purple{stroke:var(--purple)}
+  .icon.orange{stroke:var(--orange)}
+  .icon.blue{stroke:var(--blue)}
+  .icon.db{stroke:var(--db)}
+  .icon.green{stroke:var(--green)}
+
+  .core-icons{
+    position:absolute;
+    left:24px;
+    right:24px;
+    bottom:12px;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:14px;
+  }
+
+  .core-icon-chip{
+    height:34px;
+    border-radius:11px;
+    background:rgba(255,255,255,.62);
+    border:1px solid rgba(255,255,255,.9);
+    box-shadow:0 8px 18px rgba(67,82,110,.06);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
+    font-size:12px;
+    font-weight:820;
+    color:#475569;
+    white-space:nowrap;
+  }
+
+  .core-icon-chip svg{width:18px;height:18px;stroke:#475569;fill:none;stroke-width:2}
+
+  .bastion-card{
+    gap:10px !important;
+    align-content:center !important;
+    justify-items:center !important;
+    padding-top:2px;
+  }
+
+  .bastion-card .icon{
+    margin-top:2px;
+  }
+
+  .bastion-card .tile-title{
+    line-height:1.22;
+  }
+
+  .flow-layer{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    z-index:3;
+    pointer-events:none;
+    overflow:visible;
+  }
+
+  .line{
+    fill:none;
+    stroke:#2563eb;
+    stroke-width:3;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    opacity:.74;
+  }
+
+  .line.admin{
+    stroke:#7c3aed;
+    stroke-width:3;
+    stroke-dasharray:8 7;
+    opacity:.82;
+  }
+
+  .stream{
+    fill:none;
+    stroke:#67a7ff;
+    stroke-width:4.6;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    stroke-dasharray:22 110;
+    animation:flowForward 2.3s linear infinite;
+    opacity:.72;
+    filter:drop-shadow(0 0 6px rgba(37,99,235,.35));
+  }
+
+  .stream.reverse{animation-name:flowReverse}
+  .stream.admin{
+    stroke:#ae92fb;
+    stroke-width:4.6;
+    stroke-dasharray:18 86;
+    animation-duration:2s;
+    filter:drop-shadow(0 0 6px rgba(124,58,237,.35));
+  }
+
+  @keyframes flowForward{to{stroke-dashoffset:-132}}
+  @keyframes flowReverse{to{stroke-dashoffset:132}}
+
+  .control-row{
+    position:absolute;
+    left:275px;
+    top:604px;
+    width:1005px;
+    height:96px;
+    z-index:4;
+  }
+
+  .control-card{
+    position:absolute;
+    top:36px;
+    min-height:48px;
+    padding:9px 10px 9px 38px;
+    border-radius:14px;
+    background:rgba(255,255,255,.56);
+    border:1px solid rgba(255,255,255,.84);
+    box-shadow:0 10px 24px rgba(67,82,110,.08);
+    font-size:12px;
+    color:#213852;
+    font-weight:760;
+    line-height:1.28;
+  }
+
+  .control-card::before{
+    content:"";
+    position:absolute;
+    left:50%;
+    top:-34px;
+    height:30px;
+    border-left:2px dotted rgba(37,99,235,.50);
+  }
+
+  .control-card svg{
+    position:absolute;
+    left:8px;
+    top:12px;
+    width:24px;
+    height:24px;
+    stroke:#2f7a3e;
+    fill:none;
+    stroke-width:2.4;
+  }
+
+  .control-card.apps{left:80px;width:200px}
+  .control-card.db{left:210px;width:190px}
+  .control-card.bank{left:500px;width:190px}
+  .control-card.dmz{left:770px;width:180px}
+
+  .info-bar{
+    margin:12px auto 10px;
+    width:1090px;
+    padding:11px 16px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:14px;
+    font-size:13px;
+    font-weight:650;
+    color:#23406a;
+    text-align:center;
+    border-radius:10px;
+    background:rgba(255,255,255,.58);
+    border:1px solid rgba(37,99,235,.34);
+    box-shadow:0 10px 24px rgba(67,82,110,.08);
+  }
+
+  .footer-grid{display:grid;grid-template-columns:1.1fr 1.38fr 1.15fr 1fr;gap:12px}
+  .footer-card{
+    min-height:170px;
+    padding:16px;
+    border-radius:16px;
+    background:rgba(255,255,255,.46);
+    border:1px solid rgba(255,255,255,.82);
+    box-shadow:0 12px 28px rgba(67,82,110,.09);
+    backdrop-filter:blur(14px) saturate(135%);
+  }
+
+  .footer-card h4{margin:0 0 12px;font-size:15px;font-weight:820}
+  .legend-item,.bullet-item{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;font-size:13px;line-height:1.38;color:#1f2937}
+
+  .sample-line{width:56px;height:16px;position:relative;flex:none;margin-top:2px}
+  .sample-line::before{content:"";position:absolute;left:0;right:0;top:7px;border-top:3px solid #2563eb}
+  .sample-line.bi::before{top:4px}
+  .sample-line.bi::after{content:"";position:absolute;left:0;right:0;top:11px;border-top:3px solid #2563eb}
+  .sample-line.admin::before{border-top-style:dashed;border-top-color:#7c3aed}
+
+  .tick{color:#16a34a;font-weight:900}
+  .warn{color:#ef4444;font-weight:900}
+  .subnet-key{width:18px;height:18px;border-radius:4px;background:rgba(255,255,255,.62);flex:none;margin-top:1px}
+  .key-green{border:1.5px solid rgba(63,143,78,.78)}
+  .key-blue{border:1.5px solid rgba(22,135,232,.78)}
+  .key-orange{border:1.5px solid rgba(224,144,0,.78)}
+  .key-purple{border:1.5px solid rgba(111,67,197,.78)}
+
+  .footnote{margin-top:10px;font-size:13px;color:#5b6b81;text-align:center}
+
+  /* ===== Notion Embed Responsive + Theme Layer ===== */
+  html {
+    color-scheme: dark;
+  }
+
+  html[data-theme="dark"] {
+    --ink:#eaf2ff;
+    --muted:#a8b6ca;
+    --blue:#78a8ff;
+    --green:#79d38e;
+    --db:#71c7ff;
+    --orange:#ffc36b;
+    --purple:#b59cff;
+    --red:#ff7f7f;
+    --border:rgba(255,255,255,.16);
+    --shadow:0 22px 70px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.10);
+    --page-bg:
+      radial-gradient(circle at 16% 10%, rgba(64, 126, 255, .26), transparent 28%),
+      radial-gradient(circle at 86% 82%, rgba(168, 85, 247, .20), transparent 30%),
+      linear-gradient(135deg,#07111f 0%,#0b1728 48%,#120f24 100%);
+    --board-bg:rgba(10, 19, 33, .70);
+    --glass-bg-1:rgba(30, 44, 66, .72);
+    --glass-bg-2:rgba(16, 27, 44, .48);
+    --text-strong:#edf5ff;
+    --text-soft:#c4cfdf;
+    --card-bg:rgba(22, 35, 55, .74);
+    --card-border:rgba(255,255,255,.13);
+    --flow-blue:#80adff;
+    --flow-blue-soft:#9dc2ff;
+    --flow-purple:#b49cff;
+  }
+
+  html[data-theme="light"] {
+    color-scheme: light;
+    --ink:#102033;
+    --muted:#52647a;
+    --blue:#2563eb;
+    --green:#37864a;
+    --db:#1687e8;
+    --orange:#d88900;
+    --purple:#7047c8;
+    --red:#dc2626;
+    --border:rgba(255,255,255,.86);
+    --shadow:0 18px 46px rgba(58,79,120,.13), inset 0 1px 0 rgba(255,255,255,.72);
+    --page-bg:
+      radial-gradient(circle at 18% 10%,rgba(147,197,253,.38),transparent 28%),
+      radial-gradient(circle at 82% 78%,rgba(196,181,253,.26),transparent 30%),
+      linear-gradient(135deg,#f8fbff 0%,#edf6ff 48%,#f8f5ff 100%);
+    --board-bg:rgba(255,255,255,.36);
+    --glass-bg-1:rgba(255,255,255,.68);
+    --glass-bg-2:rgba(255,255,255,.40);
+    --text-strong:#102033;
+    --text-soft:#52647a;
+    --card-bg:rgba(255,255,255,.58);
+    --card-border:rgba(255,255,255,.88);
+    --flow-blue:#2563eb;
+    --flow-blue-soft:#67a7ff;
+    --flow-purple:#7c3aed;
+  }
+
+  body {
+    background: var(--page-bg) !important;
+    color: var(--ink) !important;
+    padding: 0 !important;
+    overflow: hidden;
+  }
+
+  .page {
+    width: 100vw !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+    display: block !important;
+    padding: 0 !important;
+  }
+
+  .fit-stage {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .board {
+    position: absolute !important;
+    left: 0;
+    top: 0;
+    transform-origin: top left;
+    background: var(--board-bg) !important;
+    color: var(--ink) !important;
+    border-color: var(--border) !important;
+  }
+
+  .glass {
+    background: linear-gradient(180deg,var(--glass-bg-1),var(--glass-bg-2)) !important;
+    border-color: var(--border) !important;
+  }
+
+  .subnet {
+    border-color: var(--card-border);
+  }
+
+  .zone-title,
+  .node-title,
+  .tile-title,
+  .footer-card h4,
+  h1 {
+    color: var(--text-strong) !important;
+  }
+
+  .subtitle,
+  .node-sub,
+  .footnote,
+  .bullet-item,
+  .legend-item {
+    color: var(--text-soft) !important;
+  }
+
+  .app-card,
+  .footer-card,
+  .info-bar,
+  .label-chip,
+  .core-icon-chip,
+  .control-card {
+    background: var(--card-bg) !important;
+    border-color: var(--card-border) !important;
+  }
+
+  .line {
+    stroke: var(--flow-blue) !important;
+  }
+
+  .stream {
+    stroke: var(--flow-blue-soft) !important;
+  }
+
+  .line.admin {
+    stroke: var(--flow-purple) !important;
+  }
+
+  .stream.admin {
+    stroke: var(--flow-purple) !important;
+  }
+
+  .theme-toggle {
+    position: fixed;
+    right: 14px;
+    top: 12px;
+    z-index: 9999;
+    border: 1px solid var(--card-border);
+    background: var(--card-bg);
+    color: var(--text-strong);
+    border-radius: 999px;
+    padding: 7px 11px;
+    font-size: 12px;
+    font-weight: 760;
+    cursor: pointer;
+    backdrop-filter: blur(12px) saturate(140%);
+    box-shadow: 0 10px 28px rgba(0,0,0,.18);
+  }
+
+  .theme-toggle:hover {
+    transform: translateY(-1px);
+  }
+
+  @media (max-width: 700px) {
+    .theme-toggle {
+      right: 8px;
+      top: 8px;
+      font-size: 11px;
+      padding: 6px 9px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .stream {
+      animation: none !important;
+      opacity: .35 !important;
+    }
+  }
+
+
+  /* ===== Final Theme Polish: reference-style dark/light variables ===== */
+  html {
+    color-scheme: light dark;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #0b1020;
+    --bg-elevated: rgba(255, 255, 255, 0.06);
+    --card: rgba(255, 255, 255, 0.055);
+    --card-strong: rgba(255, 255, 255, 0.085);
+    --text: #e8eefc;
+    --muted: #a8b2ca;
+    --border: rgba(255, 255, 255, 0.10);
+    --primary: #8aa2ff;
+    --primary-soft: rgba(138, 162, 255, 0.14);
+    --accent: #b29cff;
+    --accent-soft: rgba(178, 156, 255, 0.14);
+    --safe: #72d6a1;
+    --safe-soft: rgba(114, 214, 161, 0.13);
+    --warn: #f0b36b;
+    --warn-soft: rgba(240, 179, 107, 0.13);
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+
+    --app-bg: rgba(114, 214, 161, 0.105);
+    --app-border: rgba(114, 214, 161, 0.28);
+    --db-bg: rgba(113, 199, 255, 0.105);
+    --db-border: rgba(113, 199, 255, 0.32);
+    --bank-bg: rgba(240, 179, 107, 0.105);
+    --bank-border: rgba(240, 179, 107, 0.34);
+    --dmz-bg: rgba(178, 156, 255, 0.11);
+    --dmz-border: rgba(178, 156, 255, 0.34);
+    --ops-bg: rgba(168, 178, 202, 0.08);
+    --ops-border: rgba(168, 178, 202, 0.25);
+    --outer-border: rgba(232, 238, 252, 0.32);
+    --boundary: rgba(168, 178, 202, 0.38);
+    --flow-main: #8aa2ff;
+    --flow-glow: #a9bcff;
+    --flow-admin: #b29cff;
+    --flow-system: #68e1d4;
+    --flow-system-glow: #8cf5ea;
+  }
+
+  html[data-theme="light"] {
+    --bg: #f7f8fc;
+    --bg-elevated: rgba(255, 255, 255, 0.72);
+    --card: rgba(255, 255, 255, 0.82);
+    --card-strong: rgba(255, 255, 255, 0.90);
+    --text: #172033;
+    --muted: #667089;
+    --border: rgba(23, 32, 51, 0.10);
+    --primary: #5b7cff;
+    --primary-soft: rgba(91, 124, 255, 0.10);
+    --accent: #8b6dff;
+    --accent-soft: rgba(139, 109, 255, 0.12);
+    --safe: #2e9f6e;
+    --safe-soft: rgba(46, 159, 110, 0.12);
+    --warn: #d9893d;
+    --warn-soft: rgba(217, 137, 61, 0.12);
+    --shadow: 0 10px 30px rgba(27, 39, 78, 0.08);
+
+    --app-bg: rgba(46, 159, 110, 0.10);
+    --app-border: rgba(46, 159, 110, 0.30);
+    --db-bg: rgba(91, 124, 255, 0.11);
+    --db-border: rgba(91, 124, 255, 0.34);
+    --bank-bg: rgba(217, 137, 61, 0.12);
+    --bank-border: rgba(217, 137, 61, 0.38);
+    --dmz-bg: rgba(139, 109, 255, 0.12);
+    --dmz-border: rgba(139, 109, 255, 0.34);
+    --ops-bg: rgba(102, 112, 137, 0.08);
+    --ops-border: rgba(102, 112, 137, 0.26);
+    --outer-border: rgba(23, 32, 51, 0.42);
+    --boundary: rgba(102, 112, 137, 0.38);
+    --flow-main: #5b7cff;
+    --flow-glow: #7fa1ff;
+    --flow-admin: #8b6dff;
+    --flow-system: #2fb8a6;
+    --flow-system-glow: #5bd6c8;
+  }
+
+  body {
+    background:
+      radial-gradient(circle at 15% 18%, var(--primary-soft), transparent 28%),
+      radial-gradient(circle at 82% 12%, var(--accent-soft), transparent 30%),
+      var(--bg) !important;
+    color: var(--text) !important;
+  }
+
+  .board {
+    background: var(--bg-elevated) !important;
+    border-color: var(--border) !important;
+    box-shadow: var(--shadow) !important;
+  }
+
+  .glass {
+    background: var(--bg-elevated) !important;
+    border-color: var(--border) !important;
+    box-shadow: var(--shadow) !important;
+  }
+
+  .office,
+  .enterprise,
+  .external {
+    border-color: var(--outer-border) !important;
+  }
+
+  .office {
+    box-shadow: var(--shadow), inset 0 0 0 1.5px color-mix(in srgb, var(--primary) 58%, transparent) !important;
+  }
+
+  .enterprise,
+  .external {
+    box-shadow: var(--shadow), inset 0 0 0 1.4px var(--outer-border) !important;
+  }
+
+  .inner-boundary {
+    border-color: var(--boundary) !important;
+    background: color-mix(in srgb, var(--card) 32%, transparent) !important;
+  }
+
+  .subnet {
+    background: var(--card) !important;
+    border-color: var(--border) !important;
+    box-shadow: var(--shadow) !important;
+  }
+
+  .subnet.app {
+    background: var(--app-bg) !important;
+    border-color: var(--app-border) !important;
+  }
+
+  .subnet.db-zone {
+    background: var(--db-bg) !important;
+    border-color: var(--db-border) !important;
+  }
+
+  .subnet.bank-zone {
+    background: var(--bank-bg) !important;
+    border-color: var(--bank-border) !important;
+  }
+
+  .subnet.dmz-zone {
+    background: var(--dmz-bg) !important;
+    border-color: var(--dmz-border) !important;
+  }
+
+  .subnet.ops-zone {
+    background: var(--ops-bg) !important;
+    border-color: var(--ops-border) !important;
+  }
+
+  .app-card,
+  .footer-card,
+  .info-bar,
+  .label-chip,
+  .core-icon-chip,
+  .control-card {
+    background: var(--card) !important;
+    border-color: var(--border) !important;
+    box-shadow: var(--shadow) !important;
+  }
+
+  h1,
+  .zone-title,
+  .external-title,
+  .node-title,
+  .tile-title,
+  .footer-card h4,
+  .label-chip,
+  .core-icon-chip {
+    color: var(--text) !important;
+  }
+
+  .subtitle,
+  .node-sub,
+  .footnote,
+  .legend-item,
+  .bullet-item,
+  .info-bar,
+  .control-card {
+    color: var(--muted) !important;
+  }
+
+  .icon,
+  .icon.blue,
+  .icon.db,
+  .icon.green {
+    stroke: var(--primary) !important;
+  }
+
+  .icon.purple {
+    stroke: var(--accent) !important;
+  }
+
+  .icon.orange {
+    stroke: var(--warn) !important;
+  }
+
+  .core-icon-chip svg {
+    stroke: var(--muted) !important;
+  }
+
+  .control-card svg,
+  .hint svg {
+    stroke: var(--safe) !important;
+  }
+
+  .line {
+    stroke: var(--flow-main) !important;
+  }
+
+  .stream {
+    stroke: var(--flow-glow) !important;
+    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--flow-main) 36%, transparent)) !important;
+  }
+
+  .line.admin {
+    stroke: var(--flow-admin) !important;
+  }
+
+  .stream.admin {
+    stroke: var(--flow-admin) !important;
+    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--flow-admin) 42%, transparent)) !important;
+  }
+
+  .office-sep {
+    border-top-color: color-mix(in srgb, var(--primary) 45%, transparent) !important;
+  }
+
+  .control-card::before {
+    border-left-color: color-mix(in srgb, var(--primary) 40%, transparent) !important;
+  }
+
+  .sample-line::before,
+  .sample-line.bi::after {
+    border-top-color: var(--flow-main) !important;
+  }
+
+  .sample-line.admin::before {
+    border-top-color: var(--flow-admin) !important;
+  }
+
+  .tick {
+    color: var(--safe) !important;
+  }
+
+  .warn {
+    color: var(--red) !important;
+  }
+
+  html[data-theme="dark"] .lock.green {
+    background: linear-gradient(135deg, #4ccf85, #2e9f6e) !important;
+  }
+
+  html[data-theme="dark"] .lock.blue {
+    background: linear-gradient(135deg, #8aa2ff, #5b7cff) !important;
+  }
+
+  html[data-theme="dark"] .lock.orange {
+    background: linear-gradient(135deg, #f0b36b, #d9893d) !important;
+  }
+
+  html[data-theme="dark"] .lock.purple {
+    background: linear-gradient(135deg, #b29cff, #8b6dff) !important;
+  }
+
+  .theme-toggle {
+    background: var(--card) !important;
+    border-color: var(--border) !important;
+    color: var(--text) !important;
+    box-shadow: var(--shadow) !important;
+  }
+
+
+  /* ===== Final Animation Fix: keep data-flow lines moving in Notion/GitHub embeds ===== */
+  .stream {
+    stroke-dasharray: 22 110 !important;
+    animation: flowForward 2.3s linear infinite !important;
+    opacity: 0.82 !important;
+  }
+
+  .stream.reverse {
+    animation: flowReverse 2.3s linear infinite !important;
+  }
+
+  .stream.admin {
+    stroke-dasharray: 18 86 !important;
+    animation: flowForward 2.6s linear infinite !important;
+    opacity: 0.84 !important;
+  }
+
+  @keyframes flowForward {
+    to { stroke-dashoffset: -132; }
+  }
+
+  @keyframes flowReverse {
+    to { stroke-dashoffset: 132; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .stream,
+    .stream.reverse,
+    .stream.admin {
+      animation: flowForward 2.3s linear infinite !important;
+    }
+
+    .stream.reverse {
+      animation-name: flowReverse !important;
+    }
+
+    .stream.admin {
+      animation-duration: 2s !important;
+    }
+  }
+
+
+  /* ===== Animated Legend ===== */
+  .sample-line {
+    position: relative !important;
+    width: 78px !important;
+    height: 18px !important;
+    flex: none;
+    margin-top: 2px;
+    overflow: hidden;
+  }
+
+  .sample-line::before,
+  .sample-line::after {
+    content: none !important;
+  }
+
+  .legend-track,
+  .legend-pulse {
+    position: absolute;
+    left: 0;
+    right: 0;
+    border-radius: 999px;
+  }
+
+  .legend-track {
+    border-top: 3px solid var(--flow-main);
+    opacity: .92;
+  }
+
+  .legend-track.top,
+  .legend-pulse.top {
+    top: 4px;
+  }
+
+  .legend-track.bottom,
+  .legend-pulse.bottom {
+    top: 12px;
+  }
+
+  .one-way .legend-track,
+  .one-way .legend-pulse,
+  .admin-way .legend-track,
+  .admin-way .legend-pulse {
+    top: 8px;
+  }
+
+  .legend-track.admin {
+    border-top-color: var(--flow-admin);
+    border-top-style: dashed;
+    border-top-width: 3px;
+    opacity: .95;
+  }
+
+  .legend-pulse {
+    border-top: 4px solid var(--flow-glow);
+    width: 22px;
+    left: -30px;
+    right: auto;
+    opacity: .95;
+    filter: drop-shadow(0 0 4px color-mix(in srgb, var(--flow-main) 35%, transparent));
+    animation: legendMoveForward 2.1s linear infinite;
+  }
+
+  .legend-pulse.reverse {
+    left: auto;
+    right: -30px;
+    animation-name: legendMoveReverse;
+  }
+
+  .legend-pulse.admin {
+    border-top-color: var(--flow-admin);
+    width: 18px;
+    filter: drop-shadow(0 0 4px color-mix(in srgb, var(--flow-admin) 42%, transparent));
+    animation-duration: 1.9s;
+  }
+
+  @keyframes legendMoveForward {
+    from { transform: translateX(0); }
+    to   { transform: translateX(108px); }
+  }
+
+  @keyframes legendMoveReverse {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-108px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .legend-pulse {
+      animation: none !important;
+      opacity: .55 !important;
+    }
+  }
+
+
+  /* ===== Robust SVG Animated Legend v2 ===== */
+  .legend-svg {
+    width: 92px;
+    height: 22px;
+    flex: 0 0 92px;
+    overflow: visible;
+    display: block;
+    margin-top: 1px;
+  }
+
+  .legend-svg .legend-base {
+    fill: none;
+    stroke-linecap: round;
+    stroke-width: 3.2;
+    opacity: .78;
+  }
+
+  .legend-svg .legend-base.business {
+    stroke: var(--flow-main);
+  }
+
+  .legend-svg .legend-base.admin {
+    stroke: var(--flow-admin);
+    stroke-dasharray: 7 6;
+    opacity: .86;
+  }
+
+  .legend-svg .legend-flow {
+    fill: none;
+    stroke-linecap: round;
+    stroke-width: 5;
+    stroke-dasharray: 18 80;
+    stroke-dashoffset: 0;
+    animation: legendSvgForward 1.8s linear infinite;
+    opacity: .95;
+  }
+
+  .legend-svg .legend-flow.business {
+    stroke: var(--flow-glow);
+    filter: drop-shadow(0 0 5px color-mix(in srgb, var(--flow-main) 42%, transparent));
+  }
+
+  .legend-svg .legend-flow.admin {
+    stroke: var(--flow-admin);
+    stroke-width: 4.6;
+    stroke-dasharray: 20 78;
+    animation-duration: 2.35s;
+    filter: drop-shadow(0 0 5px color-mix(in srgb, var(--flow-admin) 48%, transparent));
+  }
+
+  .legend-svg .legend-flow.reverse {
+    animation-name: legendSvgReverse;
+  }
+
+  @keyframes legendSvgForward {
+    to { stroke-dashoffset: -98; }
+  }
+
+  @keyframes legendSvgReverse {
+    to { stroke-dashoffset: 98; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .legend-svg .legend-flow,
+    .legend-svg .legend-flow.reverse,
+    .legend-svg .legend-flow.admin {
+      animation: legendSvgForward 1.8s linear infinite !important;
+    }
+
+    .legend-svg .legend-flow.reverse {
+      animation-name: legendSvgReverse !important;
+    }
+  }
+
+
+  /* ===== Responsive Fit Patch v4: prevent footer clipping in browser / Notion iframe ===== */
+  html,
+  body {
+    width: 100%;
+    height: 100%;
+  }
+
+  body {
+    overflow: hidden !important;
+  }
+
+  .fit-stage {
+    width: 100vw !important;
+    height: 100vh !important;
+    position: relative !important;
+    overflow: hidden !important;
+  }
+
+  .board {
+    will-change: transform;
+    margin: 0 !important;
+  }
+
+
+  /* ===== System / Service Flow semantic layer ===== */
+  .line.system {
+    stroke: var(--flow-system) !important;
+    stroke-dasharray: 8 7;
+    opacity: .84;
+  }
+
+  .stream.system {
+    stroke: var(--flow-system-glow) !important;
+    stroke-dasharray: 18 86 !important;
+    animation: flowForward 2.6s linear infinite !important;
+    opacity: .82 !important;
+    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--flow-system) 42%, transparent)) !important;
+  }
+
+  .stream.system.reverse {
+    animation-name: flowReverse !important;
+  }
+
+  .legend-svg .legend-base.system {
+    stroke: var(--flow-system);
+    stroke-dasharray: 7 6;
+    opacity: .86;
+  }
+
+  .legend-svg .legend-flow.system {
+    stroke: var(--flow-system-glow);
+    stroke-width: 4.6;
+    stroke-dasharray: 20 78;
+    animation-duration: 2.45s;
+    filter: drop-shadow(0 0 5px color-mix(in srgb, var(--flow-system) 48%, transparent));
+  }
+
+
+  /* ===== Legend Fit Check: four legend rows fit in footer card ===== */
+  .footer-card .legend-item {
+    margin-bottom: 8px !important;
+  }
+
+  .footer-card .legend-svg {
+    height: 20px;
+  }
+
+
+  /* ===== Final Full Contain Fit for Notion Embed ===== */
+  html,
+  body {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body {
+    display: block !important;
+  }
+
+  .page {
+    width: 100vw !important;
+    height: 100vh !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+  }
+
+  .fit-stage {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .board {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 1480px !important;
+    min-height: 1090px !important;
+    height: 1090px !important;
+    margin: 0 !important;
+    transform-origin: top left !important;
+    overflow: hidden !important;
+  }
+
+  @media (max-width: 1200px) {
+    body {
+      padding: 0 !important;
+    }
+
+    .board {
+      width: 1480px !important;
+    }
+  }
+
+
+  /* ===== Main Diagram Dashed Flow Polish v12 =====
+     Keep legend animation unchanged. Smooth only the in-diagram dashed flows. */
+  .flow-layer .line.system,
+  .flow-layer .line.admin {
+    stroke-dasharray: 10 9 !important;
+    opacity: 0.66 !important;
+  }
+
+  .flow-layer .stream.system,
+  .flow-layer .stream.admin {
+    stroke-dasharray: 42 210 !important;
+    stroke-width: 4.2 !important;
+    opacity: 0.58 !important;
+    animation: mainDashedFlowForward 3.45s linear infinite !important;
+  }
+
+  .flow-layer .stream.system.reverse,
+  .flow-layer .stream.admin.reverse {
+    animation-name: mainDashedFlowReverse !important;
+  }
+
+  .flow-layer .stream.system {
+    stroke: var(--flow-system-glow) !important;
+    filter: drop-shadow(0 0 4px color-mix(in srgb, var(--flow-system) 32%, transparent)) !important;
+  }
+
+  .flow-layer .stream.admin {
+    stroke: var(--flow-admin) !important;
+    filter: drop-shadow(0 0 4px color-mix(in srgb, var(--flow-admin) 34%, transparent)) !important;
+  }
+
+  @keyframes mainDashedFlowForward {
+    to { stroke-dashoffset: -252; }
+  }
+
+  @keyframes mainDashedFlowReverse {
+    to { stroke-dashoffset: 252; }
+  }
+
+</style>
+</head>
+
+<body>
+<div class="page">
+  <div class="fit-stage" id="fitStage">
+  <div class="board" id="diagramBoard">
+    <h1>Fund System Security Architecture</h1>
+    <div class="subtitle">Segmented fund-system architecture with separated business access, system service flows, controlled operations access, and DMZ boundary protection.</div>
+
+    <div class="main">
+      <div class="glass office">
+        <div class="zone-title">
+          <span class="office-title-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 21V5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v16"/><path d="M14 9h5a1 1 0 0 1 1 1v11"/><path d="M8 8h2M8 12h2M8 16h2M17 13h1M17 17h1M3 21h18"/>
+            </svg>
+          </span>
+          Office Network
+        </div>
+        <div class="office-sep"></div>
+      </div>
+
+      <div class="glass enterprise"><div class="zone-title">Internal Enterprise Network</div></div>
+      <div class="inner-boundary"></div>
+
+      <div class="subnet app business-apps">
+        <div class="label-chip">
+          <span class="lock green"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+          <span>Application Subnet (Business Apps)</span>
+        </div>
+      </div>
+
+      <div class="subnet app core-apps">
+        <div class="label-chip">
+          <span class="lock green"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+          <span>Application Subnet (Core)</span>
+        </div>
+        <div class="core-icons">
+          <div class="core-icon-chip"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 20h8M12 18v2"/></svg>B/S</div>
+          <div class="core-icon-chip"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="7" height="14" rx="2"/><rect x="14" y="8" width="6" height="8" rx="2"/><path d="M11 12h3"/></svg>C/S</div>
+          <div class="core-icon-chip"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="16" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>OS</div>
+        </div>
+      </div>
+
+      <div class="subnet ops-zone bastion-zone"></div>
+
+      <div class="subnet db-zone database-zone">
+        <div class="label-chip">
+          <span class="lock blue"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+          <span>Database Subnet (Private)</span>
+        </div>
+      </div>
+
+      <div class="subnet bank-zone bank-subnet">
+        <div class="label-chip narrow">
+          <span class="lock orange"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+          <span>Bank<br>Connectivity<br>Subnet</span>
+        </div>
+      </div>
+
+      <div class="subnet dmz-zone dmz-subnet">
+        <div class="label-chip narrow">
+          <span class="lock purple"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+          <span>DMZ Subnet</span>
+        </div>
+      </div>
+
+      <div class="glass external"><div class="external-title">External<br>(Bank)</div></div>
+
+      <svg class="flow-layer" viewBox="0 0 1444 710" aria-hidden="true">
+        <!-- one-way -->
+        <path class="line" d="M178 188 H420"/>
+        <path class="stream" d="M178 188 H420"/>
+
+        <path class="line system" d="M484 231 V292"/>
+        <path class="stream system" d="M484 231 V292"/>
+        <path class="line system" d="M498 231 V292"/>
+        <path class="stream system reverse" d="M498 231 V292"/>
+
+        <path class="line" d="M815 184 H890"/>
+        <path class="stream" d="M815 184 H890"/>
+        <path class="line" d="M815 198 H890"/>
+        <path class="stream reverse" d="M815 198 H890"/>
+
+        <!-- bi-directional: parallel straight lines -->
+        <path class="line" d="M548 183 H655"/>
+        <path class="stream" d="M548 183 H655"/>
+        <path class="line" d="M548 196 H655"/>
+        <path class="stream reverse" d="M655 196 H548"/>
+
+        <path class="line system" d="M710 231 V262 H840 V500 H815"/>
+        <path class="stream system" d="M710 231 V262 H840 V500 H815"/>
+        <path class="line system" d="M728 231 V278 H856 V516 H815"/>
+        <path class="stream system reverse" d="M728 231 V278 H856 V516 H815"/>
+
+        <path class="line" d="M1045 310 H1115"/>
+        <path class="stream" d="M1045 310 H1115"/>
+        <path class="line" d="M1045 323 H1115"/>
+        <path class="stream reverse" d="M1045 323 H1115"/>
+
+        <path class="line" d="M1250 310 H1316"/>
+        <path class="stream" d="M1250 310 H1316"/>
+        <path class="line" d="M1250 323 H1316"/>
+        <path class="stream reverse" d="M1250 323 H1316"/>
+
+        <!-- admin dashed -->
+        <path class="line admin" d="M178 500 H285"/>
+        <path class="stream admin" d="M178 500 H285"/>
+
+        <path class="line admin" d="M338 430 V360 H355"/>
+        <path class="stream admin" d="M338 430 V360 H355"/>
+
+        <path class="line admin" d="M450 500 H500"/>
+        <path class="stream admin" d="M450 500 H500"/>
+      </svg>
+
+      <div class="node office-user">
+        <svg class="icon large blue" viewBox="0 0 64 64"><circle cx="32" cy="22" r="10"/><circle cx="17" cy="27" r="8"/><circle cx="47" cy="27" r="8"/><path d="M14 51c2-12 13-17 18-17s16 5 18 17"/><path d="M4 51c1-9 8-14 15-14"/><path d="M60 51c-1-9-8-14-15-14"/></svg>
+        <div class="node-title">Business Users</div>
+        <div class="node-sub">(Finance Dept)</div>
+        <div class="node-sub" style="margin-top:12px;">User Access via<br>SSO / IAM</div>
+      </div>
+
+      <div class="node office-ops">
+        <svg class="icon large purple" viewBox="0 0 64 64"><circle cx="22" cy="19" r="9"/><path d="M8 51c2-13 11-19 21-19"/><rect x="34" y="30" width="22" height="15" rx="2"/><path d="M39 50h12M45 45v5"/></svg>
+        <div class="node-title">IT Operations</div>
+        <div class="node-sub" style="margin-top:12px;">Privileged Access<br>via Bastion / PAM<br>(MFA, Approval,<br>Session Logging)</div>
+      </div>
+
+      <div class="app-card oa-card">
+        <svg class="icon" viewBox="0 0 64 64"><rect x="10" y="12" width="44" height="34" rx="4"/><path d="M10 22h44"/><circle cx="17" cy="17" r="1.5"/><circle cx="23" cy="17" r="1.5"/><circle cx="29" cy="17" r="1.5"/><rect x="20" y="29" width="24" height="12" rx="2"/></svg>
+        <div class="tile-title">OA / ERP</div>
+      </div>
+
+      <div class="app-card fund-card">
+        <svg class="icon" viewBox="0 0 64 64"><rect x="14" y="10" width="36" height="12" rx="3"/><rect x="14" y="26" width="36" height="12" rx="3"/><rect x="14" y="42" width="36" height="12" rx="3"/><circle cx="22" cy="16" r="2"/><circle cx="22" cy="32" r="2"/><circle cx="22" cy="48" r="2"/></svg>
+        <div class="tile-title">Fund System</div>
+      </div>
+
+      <div class="app-card bastion-card">
+        <svg class="icon purple" viewBox="0 0 64 64"><rect x="14" y="28" width="36" height="24" rx="4"/><path d="M22 28v-8a10 10 0 0 1 20 0v8"/><path d="M25 40h14"/><path d="M25 46h7"/></svg>
+        <div class="tile-title">Bastion /<br>Jump Host</div>
+        
+      </div>
+
+      <div class="app-card db-card">
+        <svg class="icon db" viewBox="0 0 64 64"><ellipse cx="32" cy="16" rx="20" ry="8"/><path d="M12 16v30c0 4.4 9 8 20 8s20-3.6 20-8V16"/><path d="M12 26c0 4.4 9 8 20 8s20-3.6 20-8"/><path d="M12 36c0 4.4 9 8 20 8s20-3.6 20-8"/></svg>
+        <div class="tile-title">Database</div>
+      </div>
+
+      <div class="node bank-service">
+        <svg class="icon large orange" viewBox="0 0 64 64"><path d="M22 47H17a13 13 0 0 1 0-26 17 17 0 0 1 33 5 11 11 0 0 1-2 21h-6"/><rect x="24" y="32" width="18" height="16" rx="3"/><path d="M28 32v-6a5 5 0 0 1 10 0v6"/></svg>
+        <div class="node-title">Bank Connectivity<br>Service</div>
+        <div class="node-sub">(Payment, Statement,<br>Reconciliation, etc.)</div>
+      </div>
+
+      <div class="node gateway">
+        <svg class="icon large purple" viewBox="0 0 64 64"><path d="M32 8l22 9v14c0 14-9 23-22 28C19 54 10 45 10 31V17l22-9z"/><path d="M22 32l7 7 14-16"/></svg>
+        <div class="node-title">Frontend /<br>Gateway</div>
+        <div class="node-sub">(API Gateway /<br>Reverse Proxy)</div>
+      </div>
+
+      <div class="node bank-system">
+        <svg class="icon large" viewBox="0 0 64 64"><path d="M8 24h48L32 10 8 24z"/><path d="M14 24v25M24 24v25M40 24v25M50 24v25"/><path d="M10 49h44M8 56h48"/></svg>
+        <div class="node-title">Bank Systems</div>
+      </div>
+
+      <div class="control-row">
+<div class="control-card db">
+          <svg viewBox="0 0 32 32"><path d="M16 3l10 4v7c0 7-4 12-10 15C10 26 6 21 6 14V7l10-4z"/><path d="M11 16l4 4 7-9"/></svg>
+          Network ACLs<br>Security Groups<br><span style="font-weight:600;color:#4b5563;">(Least Privilege)</span>
+        </div>
+        <div class="control-card bank">
+          <svg viewBox="0 0 32 32"><path d="M16 3l10 4v7c0 7-4 12-10 15C10 26 6 21 6 14V7l10-4z"/><path d="M11 16l4 4 7-9"/></svg>
+          Network ACLs<br>Firewall Rules<br><span style="font-weight:600;color:#4b5563;">(Egress Control)</span>
+        </div>
+        <div class="control-card dmz">
+          <svg viewBox="0 0 32 32"><path d="M16 3l10 4v7c0 7-4 12-10 15C10 26 6 21 6 14V7l10-4z"/><path d="M11 16l4 4 7-9"/></svg>
+          WAF / Firewall<br>DDoS Protection<br><span style="font-weight:600;color:#4b5563;">(Ingress Filtering)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-bar">
+      <span>ℹ️</span>
+      <span>All inter-subnet traffic is controlled by Firewall Rules, Security Groups and NACLs.</span>
+      <span>|</span>
+      <span>All access is logged and monitored (SIEM / monitoring platform).</span>
+    </div>
+
+    <div class="footer-grid">
+      <div class="footer-card">
+        <h4>Legend</h4>
+
+        <div class="legend-item">
+          <svg class="legend-svg" viewBox="0 0 92 18" aria-hidden="true">
+            <path class="legend-base business" d="M4 9 H88"/>
+            <path class="legend-flow business" d="M4 9 H88"/>
+          </svg>
+          <div>Business Flow (One-way)</div>
+        </div>
+
+        <div class="legend-item">
+          <svg class="legend-svg" viewBox="0 0 92 24" aria-hidden="true">
+            <path class="legend-base business" d="M4 7 H88"/>
+            <path class="legend-flow business" d="M4 7 H88"/>
+            <path class="legend-base business" d="M4 17 H88"/>
+            <path class="legend-flow business reverse" d="M4 17 H88"/>
+          </svg>
+          <div>Business Flow (Bi-directional)</div>
+        </div>
+
+        <div class="legend-item">
+          <svg class="legend-svg" viewBox="0 0 92 18" aria-hidden="true">
+            <path class="legend-base system" d="M4 9 H88"/>
+            <path class="legend-flow system" d="M4 9 H88"/>
+          </svg>
+          <div>System / Service Flow</div>
+        </div>
+
+        <div class="legend-item">
+          <svg class="legend-svg" viewBox="0 0 92 18" aria-hidden="true">
+            <path class="legend-base admin" d="M4 9 H88"/>
+            <path class="legend-flow admin" d="M4 9 H88"/>
+          </svg>
+          <div>Privileged / Admin Flow</div>
+        </div>
+      </div>
+
+      <div class="footer-card">
+        <h4>Access Control Principles</h4>
+        <div class="bullet-item"><span class="tick">●</span><span>Business Users can access application layers only.</span></div>
+        <div class="bullet-item"><span class="tick">●</span><span>No direct access to Database from Business Users.</span></div>
+        <div class="bullet-item"><span class="tick">●</span><span>IT Operations access is via Bastion/PAM with MFA, Approval and Session Logging.</span></div>
+        <div class="bullet-item"><span class="tick">●</span><span>Least Privilege, Need-to-Know Access.</span></div>
+      </div>
+
+      <div class="footer-card" style="background:linear-gradient(180deg,rgba(255,245,245,.58),rgba(255,255,255,.38));">
+        <h4 style="color:#dc2626;">Important</h4>
+        <div class="bullet-item"><span class="warn">⊘</span><span>No direct access to DB from Office Network.</span></div>
+        <div class="bullet-item"><span class="warn">⊘</span><span>No public access to internal subnets.</span></div>
+        <div class="bullet-item"><span class="warn">⊘</span><span>All admin access is restricted and auditable.</span></div>
+      </div>
+
+      <div class="footer-card">
+        <h4>Subnet Legend</h4>
+        <div class="bullet-item"><span class="subnet-key key-green"></span><span>Application Subnet (Apps/Core)</span></div>
+        <div class="bullet-item"><span class="subnet-key key-blue"></span><span>Database Subnet (Private)</span></div>
+        <div class="bullet-item"><span class="subnet-key key-orange"></span><span>Bank Connectivity Subnet</span></div>
+        <div class="bullet-item"><span class="subnet-key key-purple"></span><span>DMZ Subnet</span></div>
+      </div>
+    </div>
+
+    <div class="footnote">Note: This diagram is a reference architecture. Adjust subnets, components and controls based on actual environment and compliance requirements.</div>
+  </div>
+  </div>
+</div>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle color theme">Dark</button>
+
+<script>
+(function () {
+  const DESIGN_W = 1480;
+  const DESIGN_H = 1090;
+  const SAFE_PAD = 10;
+
+  const root = document.documentElement;
+  const stage = document.getElementById("fitStage");
+  const board = document.getElementById("diagramBoard");
+  const toggle = document.getElementById("themeToggle");
+
+  const params = new URLSearchParams(window.location.search);
+  const requestedTheme = params.get("theme");
+  const fitMode = params.get("fit") || "contain";
+
+  if (requestedTheme === "light" || requestedTheme === "dark") {
+    root.setAttribute("data-theme", requestedTheme);
+  } else if (requestedTheme === "auto") {
+    const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    root.setAttribute("data-theme", prefersDark ? "dark" : "light");
+  } else {
+    root.setAttribute("data-theme", "dark");
+  }
+
+  function updateToggleLabel() {
+    const theme = root.getAttribute("data-theme") || "dark";
+    toggle.textContent = theme === "dark" ? "Dark" : "Light";
+  }
+
+  function fit() {
+    const vw = Math.max(240, window.innerWidth || document.documentElement.clientWidth || 240);
+    const vh = Math.max(240, window.innerHeight || document.documentElement.clientHeight || 240);
+
+    const availableW = Math.max(1, vw - SAFE_PAD * 2);
+    const availableH = Math.max(1, vh - SAFE_PAD * 2);
+
+    let scale;
+    if (fitMode === "width") {
+      scale = availableW / DESIGN_W;
+    } else if (fitMode === "height") {
+      scale = availableH / DESIGN_H;
+    } else {
+      scale = Math.min(availableW / DESIGN_W, availableH / DESIGN_H);
+    }
+
+    const scaledW = DESIGN_W * scale;
+    const scaledH = DESIGN_H * scale;
+    const x = Math.max(0, (vw - scaledW) / 2);
+    const y = Math.max(0, (vh - scaledH) / 2);
+
+    board.style.width = DESIGN_W + "px";
+    board.style.minHeight = DESIGN_H + "px";
+    board.style.transformOrigin = "top left";
+    board.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+
+    stage.style.width = vw + "px";
+    stage.style.height = vh + "px";
+  }
+
+  toggle.addEventListener("click", () => {
+    const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    updateToggleLabel();
+    requestAnimationFrame(fit);
+  });
+
+  window.addEventListener("resize", fit, { passive: true });
+  window.addEventListener("orientationchange", fit, { passive: true });
+
+  if (window.ResizeObserver) {
+    const ro = new ResizeObserver(() => requestAnimationFrame(fit));
+    ro.observe(document.documentElement);
+    ro.observe(document.body);
+  }
+
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => requestAnimationFrame(fit));
+  }
+
+  updateToggleLabel();
+  fit();
+  setTimeout(fit, 80);
+  setTimeout(fit, 350);
+  setTimeout(fit, 900);
+})();
+</script>
+
+</body>
+</html>
