@@ -1,238 +1,42 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Generic Application Security Reference Architecture</title>
-  <style>
-    :root {
-      --bg: #f5f7fb;
-      --surface: #ffffff;
-      --text: #172033;
-      --muted: #667089;
-      --line: #9aa7bd;
-      --border: #dce2ee;
-      --blue: #4f73e8;
-      --blue-soft: #edf2ff;
-      --purple: #7859cf;
-      --purple-soft: #f2efff;
-      --green: #26866a;
-      --green-soft: #eaf8f3;
-      --orange: #bf6a23;
-      --orange-soft: #fff3e8;
-      --shadow: 0 14px 36px rgba(35, 48, 82, 0.08);
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      padding: 28px;
-      background: var(--bg);
-      color: var(--text);
-      font-family: Inter, "Segoe UI", Arial, sans-serif;
-    }
-
-    .board {
-      width: min(1180px, 100%);
-      margin: 0 auto;
-      padding: 34px;
-      border: 1px solid var(--border);
-      border-radius: 26px;
-      background: var(--surface);
-      box-shadow: var(--shadow);
-    }
-
-    header { margin-bottom: 30px; }
-    h1 { margin: 0 0 8px; font-size: clamp(1.55rem, 3vw, 2.25rem); letter-spacing: -0.035em; }
-    header p { margin: 0; color: var(--muted); }
-
-    .main-flow {
-      display: grid;
-      grid-template-columns: 1fr 54px 1.25fr 54px 1fr;
-      align-items: stretch;
-      gap: 0;
-    }
-
-    .node,
-    .side-node,
-    .control {
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      background: var(--surface);
-    }
-
-    .node {
-      min-height: 175px;
-      padding: 22px;
-    }
-
-    .node.external { background: var(--blue-soft); border-color: #cfd9fb; }
-    .node.application { background: var(--purple-soft); border: 2px dashed #b6a7e8; }
-    .node.data { background: var(--green-soft); border-color: #bfe5d9; }
-
-    .node-label {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 13px;
-      color: var(--muted);
-      font-size: 0.76rem;
-      font-weight: 750;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-    }
-
-    .dot { width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
-    .external .node-label { color: var(--blue); }
-    .application .node-label { color: var(--purple); }
-    .data .node-label { color: var(--green); }
-    h2 { margin: 0 0 10px; font-size: 1.12rem; }
-    .node p { margin: 0; color: var(--muted); font-size: 0.91rem; line-height: 1.6; }
-
-    .arrow {
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--line);
-      font-size: 1.5rem;
-    }
-
-    .arrow::before {
-      content: "";
-      position: absolute;
-      width: 70%;
-      height: 2px;
-      background: var(--line);
-    }
-
-    .arrow::after { content: "›"; position: absolute; right: 8px; top: 50%; transform: translateY(-52%); font-size: 2rem; }
-
-    .controls {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
-      margin-top: 14px;
-    }
-
-    .control { padding: 14px 15px; }
-    .control strong { display: block; margin-bottom: 4px; font-size: 0.87rem; }
-    .control span { color: var(--muted); font-size: 0.8rem; line-height: 1.45; }
-
-    .side-flow {
-      display: grid;
-      grid-template-columns: 1fr 54px 1.25fr 54px 1fr;
-      align-items: center;
-      margin-top: 22px;
-    }
-
-    .side-node {
-      min-height: 118px;
-      padding: 18px;
-    }
-
-    .side-node.privileged { grid-column: 1 / 2; background: var(--orange-soft); border-color: #efd2b8; }
-    .side-node.evidence { grid-column: 3 / 6; background: #f1f4f9; }
-    .side-node h3 { margin: 0 0 7px; font-size: 1rem; }
-    .side-node p { margin: 0; color: var(--muted); font-size: 0.86rem; line-height: 1.55; }
-
-    .connector-labels {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
-      margin-top: 11px;
-      color: var(--muted);
-      font-size: 0.74rem;
-      text-align: center;
-    }
-
-    .legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px 18px;
-      margin-top: 25px;
-      padding-top: 20px;
-      border-top: 1px solid var(--border);
-      color: var(--muted);
-      font-size: 0.78rem;
-    }
-
-    .legend strong { color: var(--text); }
-
-    @media (max-width: 760px) {
-      body { padding: 12px; }
-      .board { padding: 22px; }
-      .main-flow { grid-template-columns: 1fr; gap: 10px; }
-      .arrow { min-height: 34px; transform: rotate(90deg); }
-      .controls { grid-template-columns: 1fr; }
-      .side-flow { display: grid; grid-template-columns: 1fr; gap: 10px; }
-      .side-node.privileged,
-      .side-node.evidence { grid-column: 1; }
-      .connector-labels { display: none; }
-    }
-  </style>
-</head>
-<body>
-  <main class="board">
-    <header>
-      <h1>Generic Application Security Reference Architecture</h1>
-      <p>A high-level control-path model for secure design and architecture review.</p>
-    </header>
-
-    <section class="main-flow" aria-label="Primary application flow">
-      <article class="node external">
-        <span class="node-label"><span class="dot"></span>Untrusted zone</span>
-        <h2>External Entry Points</h2>
-        <p>End users, client applications, APIs, uploaded content, and approved external services.</p>
-      </article>
-
-      <div class="arrow" aria-hidden="true"></div>
-
-      <article class="node application">
-        <span class="node-label"><span class="dot"></span>Application trust boundary</span>
-        <h2>Application Boundary</h2>
-        <p>Ingress, application services, identities, authorization decisions, business actions, and service-to-service calls.</p>
-      </article>
-
-      <div class="arrow" aria-hidden="true"></div>
-
-      <article class="node data">
-        <span class="node-label"><span class="dot"></span>Sensitive zone</span>
-        <h2>Sensitive Data Stores</h2>
-        <p>Business data, files, secrets, configuration, and other protected application assets.</p>
-      </article>
-    </section>
-
-    <section class="controls" aria-label="Control objectives">
-      <div class="control"><strong>Validate entry</strong><span>Approved interfaces, input validation, rate limits, and secure failure behavior.</span></div>
-      <div class="control"><strong>Enforce identity</strong><span>Authentication, object-level authorization, least privilege, and bounded service identities.</span></div>
-      <div class="control"><strong>Protect data</strong><span>Access control, encryption, retention, recovery, and controlled data movement.</span></div>
-    </section>
-
-    <section class="side-flow" aria-label="Supporting security paths">
-      <article class="side-node privileged">
-        <h3>Privileged Access</h3>
-        <p>Separate administrative path with strong authentication, approval, scoped permissions, and recorded activity.</p>
-      </article>
-
-      <article class="side-node evidence">
-        <h3>Audit Evidence &amp; Monitoring</h3>
-        <p>Security-relevant events from entry points, application decisions, privileged actions, and data access are retained for detection, investigation, and remediation verification.</p>
-      </article>
-    </section>
-
-    <div class="connector-labels" aria-hidden="true">
-      <span>Controlled administrative path</span>
-      <span>Observable security decisions</span>
-      <span>Evidence across the full path</span>
-    </div>
-
-    <footer class="legend">
-      <span><strong>Purpose:</strong> illustrate an assessment method, not a deployable product design.</span>
-      <span><strong>Scope:</strong> fictional and technology-agnostic.</span>
-      <span><strong>Review lens:</strong> entry → decision → asset → evidence.</span>
-    </footer>
-  </main>
-</body>
-</html>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Application Security Reference Architecture</title>
+<style>
+  :root{color-scheme:dark;--surface:rgba(255,255,255,.055);--strong:rgba(255,255,255,.085);--text:#e8eefc;--muted:#a8b2ca;--border:rgba(255,255,255,.11);--primary:#8aa2ff;--glow:#a9bcff;--purple:#b29cff;--teal:#68e1d4;--green:#72d6a1;--orange:#f0b36b;--red:#ff8585;--shadow:0 18px 54px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,255,255,.08);--page:radial-gradient(circle at 15% 12%,rgba(91,124,255,.22),transparent 29%),radial-gradient(circle at 84% 80%,rgba(139,109,255,.17),transparent 31%),linear-gradient(135deg,#07101e,#0b1728 50%,#120f24)}
+  html[data-theme="light"]{color-scheme:light;--surface:rgba(255,255,255,.75);--strong:rgba(255,255,255,.92);--text:#172033;--muted:#667089;--border:rgba(23,32,51,.11);--primary:#5b7cff;--glow:#7fa1ff;--purple:#8b6dff;--teal:#2fb8a6;--green:#2e9f6e;--orange:#d9893d;--red:#dc4d4d;--shadow:0 16px 44px rgba(27,39,78,.10),inset 0 1px 0 rgba(255,255,255,.8);--page:radial-gradient(circle at 15% 15%,rgba(91,124,255,.18),transparent 29%),radial-gradient(circle at 84% 80%,rgba(139,109,255,.14),transparent 31%),linear-gradient(135deg,#f8fbff,#edf6ff 50%,#f8f5ff)}
+  *{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden}body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--page);color:var(--text)}
+  .stage{position:fixed;inset:0;overflow:hidden}.board{position:absolute;width:1480px;height:1080px;padding:20px;border:1px solid var(--border);border-radius:28px;background:rgba(9,17,31,.54);box-shadow:0 28px 80px rgba(0,0,0,.28);backdrop-filter:blur(22px) saturate(135%);transform-origin:top left;overflow:hidden}html[data-theme="light"] .board{background:rgba(255,255,255,.38)}
+  h1{margin:0;font-size:24px;letter-spacing:-.025em;font-weight:830}.subtitle{margin-top:6px;color:var(--muted);font-size:13px;font-weight:560}.main{position:relative;width:1440px;height:700px;margin-top:16px}
+  .glass,.subnet,.card,.footer-card,.info-bar,.control{background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow);backdrop-filter:blur(16px) saturate(135%)}.glass{position:absolute;border-radius:19px}
+  .access-zone{left:0;top:0;width:226px;height:612px;box-shadow:var(--shadow),inset 0 0 0 1.5px color-mix(in srgb,var(--primary) 55%,transparent)}.app-zone{left:252px;top:0;width:950px;height:612px;box-shadow:var(--shadow),inset 0 0 0 1.3px rgba(232,238,252,.24)}.external-zone{left:1270px;top:0;width:170px;height:612px;box-shadow:var(--shadow),inset 0 0 0 1.3px rgba(232,238,252,.24)}
+  .zone-title{position:absolute;left:18px;top:16px;font-size:18px;font-weight:820}.zone-icon{display:inline-grid;place-items:center;width:36px;height:36px;margin-right:9px;border-radius:10px;background:linear-gradient(135deg,var(--primary),#5b7cff);color:white;vertical-align:middle}.external-title{left:0;width:100%;text-align:center;line-height:1.3}.access-sep{position:absolute;left:30px;right:30px;top:344px;border-top:1px dashed color-mix(in srgb,var(--primary) 45%,transparent)}
+  .trust-boundary{position:absolute;left:276px;top:62px;width:900px;height:520px;border:1.6px dashed color-mix(in srgb,var(--muted) 42%,transparent);border-radius:10px;background:rgba(255,255,255,.018)}.trust-label{position:absolute;right:18px;top:12px;color:var(--muted);font-size:11px;font-weight:760;letter-spacing:.08em;text-transform:uppercase}
+  .subnet{position:absolute;border-radius:17px}.edge{left:286px;top:90px;width:190px;height:454px;background:color-mix(in srgb,var(--purple) 10%,var(--surface));border-color:color-mix(in srgb,var(--purple) 34%,transparent)}.services{left:502px;top:90px;width:392px;height:218px;background:color-mix(in srgb,var(--green) 9%,var(--surface));border-color:color-mix(in srgb,var(--green) 30%,transparent)}.internal{left:502px;top:334px;width:392px;height:210px;background:color-mix(in srgb,var(--teal) 8%,var(--surface));border-color:color-mix(in srgb,var(--teal) 28%,transparent)}.data{left:920px;top:90px;width:254px;height:218px;background:color-mix(in srgb,var(--primary) 10%,var(--surface));border-color:color-mix(in srgb,var(--primary) 33%,transparent)}.integration{left:920px;top:334px;width:254px;height:210px;background:color-mix(in srgb,var(--orange) 10%,var(--surface));border-color:color-mix(in srgb,var(--orange) 34%,transparent)}
+  .chip{position:absolute;left:12px;top:12px;z-index:4;display:flex;align-items:center;gap:9px;padding:5px 11px 5px 6px;min-height:39px;border:1px solid var(--border);border-radius:12px;background:var(--strong);box-shadow:0 9px 22px rgba(0,0,0,.12);font-size:13px;font-weight:820}.lock{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;color:white}.lock svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2}.lock.purple{background:linear-gradient(135deg,#b29cff,#8b6dff)}.lock.green{background:linear-gradient(135deg,#72d6a1,#2e9f6e)}.lock.blue{background:linear-gradient(135deg,#8aa2ff,#5b7cff)}.lock.orange{background:linear-gradient(135deg,#f0b36b,#d9893d)}.lock.teal{background:linear-gradient(135deg,#68e1d4,#2fb8a6)}
+  .card{position:absolute;z-index:5;border-radius:14px;display:grid;place-items:center;align-content:center;text-align:center;background:var(--strong)}.card-icon{width:47px;height:47px;margin-bottom:7px;stroke:var(--primary);fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 7px 10px color-mix(in srgb,var(--primary) 20%,transparent))}.card-title{font-size:14px;font-weight:820;line-height:1.2}.card-sub{margin-top:5px;color:var(--muted);font-size:11px;line-height:1.35}
+  .gateway{left:311px;top:223px;width:140px;height:112px}.gateway .card-icon{stroke:var(--purple)}.web{left:538px;top:165px;width:132px;height:92px}.api{left:716px;top:165px;width:132px;height:92px}.identity{left:538px;top:401px;width:132px;height:92px}.worker{left:716px;top:401px;width:132px;height:92px}.identity .card-icon,.worker .card-icon{stroke:var(--teal)}.store{left:979px;top:165px;width:136px;height:92px}.connector{left:979px;top:401px;width:136px;height:92px}.connector .card-icon{stroke:var(--orange)}
+  .person{position:absolute;z-index:5;width:150px;text-align:center}.person svg{width:58px;height:58px;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}.users{left:38px;top:135px}.admins{left:38px;top:410px}.users svg{stroke:var(--primary)}.admins svg{stroke:var(--purple)}.person-title{font-size:15px;font-weight:820}.person-sub{margin-top:8px;color:var(--muted);font-size:12px;line-height:1.42}.third-party{left:1280px;top:245px;width:150px}.third-party svg{stroke:var(--orange)}
+  .flow{position:absolute;inset:0;z-index:3;width:100%;height:100%;pointer-events:none;overflow:visible}.line{fill:none;stroke:var(--primary);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;opacity:.68}.stream{fill:none;stroke:var(--glow);stroke-width:4.6;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:24 116;animation:forward 2.35s linear infinite;opacity:.78;filter:drop-shadow(0 0 5px color-mix(in srgb,var(--primary) 38%,transparent))}.reverse{animation-name:reverse}.line.system{stroke:var(--teal);stroke-dasharray:9 8}.stream.system{stroke:#8cf5ea;stroke-dasharray:42 210;animation-duration:3.3s;opacity:.62}.line.admin{stroke:var(--purple);stroke-dasharray:10 9}.stream.admin{stroke:var(--purple);stroke-dasharray:42 210;animation-duration:3.45s;opacity:.62}@keyframes forward{to{stroke-dashoffset:-252}}@keyframes reverse{to{stroke-dashoffset:252}}
+  .controls{position:absolute;left:278px;top:594px;width:894px;height:94px;z-index:5;display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding-top:35px}.control{position:relative;min-height:52px;padding:10px 10px 9px 40px;border-radius:14px;color:var(--muted);font-size:11px;font-weight:690;line-height:1.3}.control::before{content:"";position:absolute;left:50%;top:-31px;height:27px;border-left:2px dotted color-mix(in srgb,var(--primary) 42%,transparent)}.control svg{position:absolute;left:10px;top:13px;width:23px;height:23px;fill:none;stroke:var(--green);stroke-width:2.2}.control strong{display:block;color:var(--text);font-size:12px}
+  .info-bar{width:1100px;margin:11px auto 10px;padding:11px 16px;border-radius:11px;display:flex;justify-content:center;gap:13px;color:var(--muted);font-size:13px;font-weight:650;text-align:center}.footer-grid{display:grid;grid-template-columns:1.05fr 1.35fr 1.15fr 1fr;gap:12px}.footer-card{min-height:190px;padding:16px;border-radius:17px}.footer-card h3{margin:0 0 13px;font-size:15px}.row{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;color:var(--muted);font-size:12.5px;line-height:1.38}.tick{color:var(--green);font-weight:900}.warn{color:var(--red);font-weight:900}
+  .legend-svg{width:84px;height:19px;flex:0 0 84px;overflow:visible}.legend-svg path{fill:none;stroke-linecap:round}.base{stroke-width:3;opacity:.75}.pulse{stroke-width:5;stroke-dasharray:18 80;animation:legend 1.8s linear infinite}.business{stroke:var(--primary)}.service{stroke:var(--teal)}.privileged{stroke:var(--purple)}@keyframes legend{to{stroke-dashoffset:-98}}
+  .key{width:18px;height:18px;border-radius:5px;flex:none}.key-purple{border:1.5px solid var(--purple);background:color-mix(in srgb,var(--purple) 10%,transparent)}.key-green{border:1.5px solid var(--green);background:color-mix(in srgb,var(--green) 10%,transparent)}.key-blue{border:1.5px solid var(--primary);background:color-mix(in srgb,var(--primary) 10%,transparent)}.key-orange{border:1.5px solid var(--orange);background:color-mix(in srgb,var(--orange) 10%,transparent)}.footnote{margin-top:10px;text-align:center;color:var(--muted);font-size:12px}.theme-toggle{position:fixed;right:14px;top:12px;z-index:9999;padding:7px 11px;border:1px solid var(--border);border-radius:999px;background:var(--strong);box-shadow:var(--shadow);color:var(--text);font-size:12px;font-weight:760;cursor:pointer;backdrop-filter:blur(12px)}@media(prefers-reduced-motion:reduce){.stream,.pulse{animation:none}}
+</style></head>
+<body><div class="stage"><main class="board" id="board">
+  <h1>Application Security Reference Architecture</h1><div class="subtitle">A technology-agnostic view of application access paths, trust boundaries, sensitive assets, privileged operations, and audit evidence.</div>
+  <section class="main">
+    <div class="glass access-zone"><div class="zone-title"><span class="zone-icon">↗</span>Access Paths</div><div class="access-sep"></div></div><div class="glass app-zone"><div class="zone-title">Application Environment</div></div><div class="trust-boundary"><span class="trust-label">Application trust boundary</span></div><div class="glass external-zone"><div class="zone-title external-title">Approved<br>External<br>Services</div></div>
+    <div class="subnet edge"><div class="chip"><span class="lock purple"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>Edge / DMZ</div></div><div class="subnet services"><div class="chip"><span class="lock green"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>Application Services</div></div><div class="subnet internal"><div class="chip"><span class="lock teal"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>Internal Services</div></div><div class="subnet data"><div class="chip"><span class="lock blue"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>Sensitive Data Zone</div></div><div class="subnet integration"><div class="chip"><span class="lock orange"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>Integration Zone</div></div>
+    <div class="person users"><svg viewBox="0 0 64 64"><circle cx="32" cy="22" r="10"/><circle cx="17" cy="27" r="8"/><circle cx="47" cy="27" r="8"/><path d="M14 51c2-12 13-17 18-17s16 5 18 17M4 51c1-9 8-14 15-14M60 51c-1-9-8-14-15-14"/></svg><div class="person-title">Application Users</div><div class="person-sub">Approved channels<br>SSO / MFA</div></div><div class="person admins"><svg viewBox="0 0 64 64"><circle cx="22" cy="19" r="9"/><path d="M8 51c2-13 11-19 21-19"/><rect x="34" y="30" width="22" height="15" rx="2"/><path d="M39 50h12M45 45v5"/></svg><div class="person-title">Privileged Operators</div><div class="person-sub">PAM / approval<br>session recording</div></div><div class="person third-party"><svg viewBox="0 0 64 64"><path d="M8 24h48L32 10 8 24zM14 24v25M24 24v25M40 24v25M50 24v25M10 49h44M8 56h48"/></svg><div class="person-title">External Systems</div><div class="person-sub">Allowlisted endpoints<br>bounded permissions</div></div>
+    <div class="card gateway"><svg class="card-icon" viewBox="0 0 64 64"><path d="M32 8l22 9v14c0 14-9 23-22 28C19 54 10 45 10 31V17l22-9z"/><path d="M22 32l7 7 14-16"/></svg><div class="card-title">Gateway / WAF</div><div class="card-sub">validation · rate limits</div></div><div class="card web"><svg class="card-icon" viewBox="0 0 64 64"><rect x="10" y="12" width="44" height="36" rx="4"/><path d="M10 22h44M18 17h2M25 17h2M32 17h2"/></svg><div class="card-title">Web / Client Tier</div></div><div class="card api"><svg class="card-icon" viewBox="0 0 64 64"><rect x="14" y="10" width="36" height="12" rx="3"/><rect x="14" y="26" width="36" height="12" rx="3"/><rect x="14" y="42" width="36" height="12" rx="3"/></svg><div class="card-title">API / Service Tier</div></div><div class="card identity"><svg class="card-icon" viewBox="0 0 64 64"><circle cx="25" cy="22" r="9"/><path d="M10 49c2-12 9-18 19-18"/><path d="M44 28l8 4v7c0 7-4 11-8 14-4-3-8-7-8-14v-7l8-4z"/></svg><div class="card-title">Identity &amp; Policy</div></div><div class="card worker"><svg class="card-icon" viewBox="0 0 64 64"><rect x="12" y="14" width="40" height="36" rx="5"/><path d="M20 26h24M20 34h18M20 42h12"/></svg><div class="card-title">Business Actions</div></div><div class="card store"><svg class="card-icon" viewBox="0 0 64 64"><ellipse cx="32" cy="16" rx="20" ry="8"/><path d="M12 16v30c0 4.4 9 8 20 8s20-3.6 20-8V16M12 26c0 4.4 9 8 20 8s20-3.6 20-8M12 36c0 4.4 9 8 20 8s20-3.6 20-8"/></svg><div class="card-title">Protected Assets</div></div><div class="card connector"><svg class="card-icon" viewBox="0 0 64 64"><path d="M22 47H17a13 13 0 0 1 0-26 17 17 0 0 1 33 5 11 11 0 0 1-2 21h-6"/><rect x="24" y="32" width="18" height="16" rx="3"/><path d="M28 32v-6a5 5 0 0 1 10 0v6"/></svg><div class="card-title">Outbound Connector</div></div>
+    <svg class="flow" viewBox="0 0 1440 700" aria-hidden="true"><path class="line" d="M188 198H311"/><path class="stream" d="M188 198H311"/><path class="line" d="M451 272H538"/><path class="stream" d="M451 272H538"/><path class="line" d="M670 207H716"/><path class="stream" d="M670 207H716"/><path class="line" d="M848 207H979"/><path class="stream" d="M848 207H979"/><path class="line system" d="M604 257V401"/><path class="stream system" d="M604 257V401"/><path class="line system" d="M782 257V401"/><path class="stream system reverse" d="M782 257V401"/><path class="line system" d="M848 447H979"/><path class="stream system" d="M848 447H979"/><path class="line" d="M1115 447H1280"/><path class="stream" d="M1115 447H1280"/><path class="line admin" d="M188 475H286V382H381V335"/><path class="stream admin" d="M188 475H286V382H381V335"/><path class="line admin" d="M451 320H470V510H538"/><path class="stream admin" d="M451 320H470V510H538"/></svg>
+    <div class="controls"><div class="control"><svg viewBox="0 0 32 32"><path d="M16 3l10 4v7c0 7-4 12-10 15C10 26 6 21 6 14V7l10-4z"/><path d="M11 16l4 4 7-9"/></svg><strong>Edge Controls</strong>WAF · input validation<br>secure failure</div><div class="control"><svg viewBox="0 0 32 32"><path d="M16 3l10 4v7c0 7-4 12-10 15C10 26 6 21 6 14V7l10-4z"/><path d="M11 16l4 4 7-9"/></svg><strong>Authorization</strong>object &amp; action checks<br>least privilege</div><div class="control"><svg viewBox="0 0 32 32"><path d="M16 3l10 4v7c0 7-4 12-10 15C10 26 6 21 6 14V7l10-4z"/><path d="M11 16l4 4 7-9"/></svg><strong>Data Protection</strong>access · encryption<br>retention</div><div class="control"><svg viewBox="0 0 32 32"><path d="M16 3l10 4v7c0 7-4 12-10 15C10 26 6 21 6 14V7l10-4z"/><path d="M11 16l4 4 7-9"/></svg><strong>Integration Control</strong>egress allowlists<br>scoped credentials</div></div>
+  </section>
+  <div class="info-bar"><span>ℹ️</span><span>Security-relevant decisions, privileged actions, data access, and external calls are logged and monitored.</span><span>|</span><span>All boundaries and components are illustrative.</span></div>
+  <section class="footer-grid"><div class="footer-card"><h3>Legend</h3><div class="row"><svg class="legend-svg" viewBox="0 0 84 18"><path class="base business" d="M3 9H81"/><path class="pulse business" d="M3 9H81"/></svg><span>Application / business flow</span></div><div class="row"><svg class="legend-svg" viewBox="0 0 84 18"><path class="base service" d="M3 9H81"/><path class="pulse service" d="M3 9H81"/></svg><span>System / service flow</span></div><div class="row"><svg class="legend-svg" viewBox="0 0 84 18"><path class="base privileged" d="M3 9H81"/><path class="pulse privileged" d="M3 9H81"/></svg><span>Privileged / admin flow</span></div></div><div class="footer-card"><h3>Assessment Focus</h3><div class="row"><span class="tick">●</span><span>Identify entry points, trust boundaries, identities, and sensitive operations.</span></div><div class="row"><span class="tick">●</span><span>Verify authorization at object, action, and service boundaries.</span></div><div class="row"><span class="tick">●</span><span>Trace sensitive data movement and external dependencies.</span></div><div class="row"><span class="tick">●</span><span>Require observable controls and remediation evidence.</span></div></div><div class="footer-card"><h3 style="color:var(--red)">Important</h3><div class="row"><span class="warn">⊘</span><span>No direct user access to protected data stores.</span></div><div class="row"><span class="warn">⊘</span><span>No public access to internal service zones.</span></div><div class="row"><span class="warn">⊘</span><span>No unapproved outbound connections or standing admin access.</span></div></div><div class="footer-card"><h3>Zone Legend</h3><div class="row"><span class="key key-purple"></span><span>Edge / DMZ</span></div><div class="row"><span class="key key-green"></span><span>Application services</span></div><div class="row"><span class="key key-blue"></span><span>Sensitive data</span></div><div class="row"><span class="key key-orange"></span><span>External integration</span></div></div></section>
+  <div class="footnote">Reference architecture only — fictional, technology-agnostic, and intentionally non-deployable.</div>
+</main></div><button class="theme-toggle" id="themeToggle" type="button">Dark</button>
+<script>(()=>{const W=1480,H=1080,P=10,b=document.getElementById('board'),r=document.documentElement,t=document.getElementById('themeToggle'),q=new URLSearchParams(location.search).get('theme');if(q==='light'||q==='dark')r.dataset.theme=q;function fit(){const s=Math.min((innerWidth-P*2)/W,(innerHeight-P*2)/H),x=(innerWidth-W*s)/2,y=(innerHeight-H*s)/2;b.style.transform=`translate(${Math.max(0,x)}px,${Math.max(0,y)}px) scale(${s})`}function label(){t.textContent=r.dataset.theme==='dark'?'Dark':'Light'}t.onclick=()=>{r.dataset.theme=r.dataset.theme==='dark'?'light':'dark';label();fit()};addEventListener('resize',fit,{passive:true});document.fonts?.ready.then(fit);label();fit();setTimeout(fit,120)})();</script></body></html>
