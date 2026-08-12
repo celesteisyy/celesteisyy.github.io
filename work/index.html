@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Selected application security and AI security work by Celeste Huang." />
+  <title>Selected Work | Celeste Huang</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root { color-scheme:light dark; --bg:#f7f8fc; --surface:rgba(255,255,255,.82); --text:#172033; --muted:#667089; --border:rgba(23,32,51,.1); --primary:#5b7cff; --primary-soft:rgba(91,124,255,.1); --shadow:0 12px 32px rgba(27,39,78,.07); --maxw:940px; }
+    @media (prefers-color-scheme:dark) { :root { --bg:#0b1020; --surface:rgba(255,255,255,.055); --text:#e8eefc; --muted:#a8b2ca; --border:rgba(255,255,255,.1); --primary:#8aa2ff; --primary-soft:rgba(138,162,255,.14); --shadow:0 12px 32px rgba(0,0,0,.26); } }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    html { scroll-behavior:smooth; scroll-padding-top:86px; }
+    body { background:var(--bg); color:var(--text); font-family:"Segoe UI",Arial,sans-serif; line-height:1.68; }
+    a { color:inherit; }
+    .container { width:min(var(--maxw),calc(100% - 32px)); margin:0 auto; }
+    .topbar { position:sticky; top:12px; z-index:20; display:flex; align-items:center; justify-content:space-between; gap:15px; margin-top:12px; padding:10px 14px; border:1px solid var(--border); border-radius:999px; background:var(--surface); backdrop-filter:blur(14px); box-shadow:var(--shadow); }
+    .back,.top-links a { text-decoration:none; }
+    .back { display:inline-flex; align-items:center; gap:9px; font-weight:700; }
+    .top-links { display:flex; gap:14px; color:var(--muted); font-size:.9rem; }
+    .page-hero { max-width:770px; padding:80px 0 54px; }
+    .kicker,.case-type { color:var(--primary); font-size:.78rem; font-weight:750; letter-spacing:.13em; text-transform:uppercase; }
+    h1 { margin:8px 0 16px; font-size:clamp(2.45rem,7vw,4.25rem); line-height:1.04; letter-spacing:-.055em; }
+    .intro { color:var(--muted); font-size:1.08rem; }
+    .case { margin-bottom:30px; padding:clamp(24px,5vw,42px); border:1px solid var(--border); border-radius:26px; background:var(--surface); box-shadow:var(--shadow); }
+    .case-head { padding-bottom:25px; border-bottom:1px solid var(--border); }
+    .case h2 { margin:8px 0 10px; font-size:clamp(1.65rem,4vw,2.3rem); line-height:1.15; letter-spacing:-.035em; }
+    .case-summary { max-width:760px; color:var(--muted); }
+    .case-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:22px; }
+    .case-block { padding:18px; border:1px solid var(--border); border-radius:18px; background:var(--primary-soft); }
+    .case-block h3 { margin-bottom:8px; font-size:.82rem; letter-spacing:.08em; text-transform:uppercase; }
+    .case-block p,.case-block li { color:var(--muted); font-size:.94rem; }
+    .case-block ul { padding-left:18px; }
+    .case-block li + li { margin-top:5px; }
+    .full { grid-column:1/-1; }
+    .flow { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; margin-top:12px; }
+    .step { position:relative; padding:12px 9px; border:1px solid var(--border); border-radius:13px; background:var(--surface); color:var(--muted); font-size:.82rem; text-align:center; }
+    .step:not(:last-child)::after { content:"→"; position:absolute; right:-9px; top:50%; z-index:2; transform:translateY(-50%); color:var(--primary); }
+    .diagram-wrap { margin-top:22px; overflow:hidden; border:1px solid var(--border); border-radius:20px; background:white; }
+    .diagram-bar { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 15px; border-bottom:1px solid var(--border); background:var(--surface); color:var(--muted); font-size:.86rem; }
+    .diagram-bar a { color:var(--primary); text-underline-offset:3px; }
+    iframe { display:block; width:100%; height:620px; border:0; background:white; }
+    .disclosure { margin-top:18px; padding:14px 16px; border-left:3px solid var(--primary); border-radius:11px; background:var(--primary-soft); color:var(--muted); font-size:.88rem; }
+    footer { padding:36px 0 42px; color:var(--muted); text-align:center; font-size:.9rem; }
+    @media (max-width:700px) { .case-grid { grid-template-columns:1fr; } .full { grid-column:auto; } .flow { grid-template-columns:1fr; } .step:not(:last-child)::after { content:"↓"; top:auto; right:50%; bottom:-14px; transform:translateX(50%); } iframe { height:440px; } }
+    @media (max-width:480px) { .container { width:calc(100% - 20px); } .top-links a:first-child { display:none; } }
+  </style>
+</head>
+<body>
+  <nav class="topbar container" aria-label="Work navigation">
+    <a class="back" href="/"><i class="fa-solid fa-arrow-left"></i> Celeste Huang</a>
+    <div class="top-links"><a href="/blogs">Writing</a><a href="mailto:celesteisyy@duck.com">Contact</a></div>
+  </nav>
+
+  <main class="container">
+    <header class="page-hero">
+      <p class="kicker">Selected Work</p>
+      <h1>Projects and security case studies.</h1>
+      <p class="intro">Public projects and sanitized examples of how I frame security questions, assess controls, and define evidence for remediation.</p>
+    </header>
+
+    <article class="case" id="cyssie">
+      <header class="case-head">
+        <p class="case-type">Personal project · AI security</p>
+        <h2>Cyssie</h2>
+        <p class="case-summary">A self-hosted AI assistant designed to combine retrieval, skills, and external tools without treating every model action as implicitly trusted.</p>
+      </header>
+      <div class="case-grid">
+        <section class="case-block"><h3>Context</h3><p>A FastAPI-based assistant using RAG, skill-based orchestration, and tool calling, deployed on AWS.</p></section>
+        <section class="case-block"><h3>Security question</h3><p>How should authentication, retrieved context, and tool execution remain bounded when the model can act across multiple components?</p></section>
+        <section class="case-block"><h3>Assessment</h3><ul><li>Mapped trust boundaries between the interface, API, retrieval layer, tools, and external services.</li><li>Reviewed authentication failure paths, secrets handling, tool permissions, and retrieval behavior.</li></ul></section>
+        <section class="case-block"><h3>Decision</h3><p>Keep authentication fail-closed, make capabilities explicit through skills and tools, and preserve observable execution paths for debugging and review.</p></section>
+        <section class="case-block full"><h3>Evidence</h3><p>System architecture and implementation notes, authentication tests, retrieval behavior checks, and tool-execution logs.</p></section>
+      </div>
+    </article>
+
+    <article class="case" id="architecture">
+      <header class="case-head">
+        <p class="case-type">Sanitized reference case · Secure design</p>
+        <h2>Application Architecture Assessment</h2>
+        <p class="case-summary">A structured review of a critical-system architecture, centered on the complete control path rather than the presence of individual security products.</p>
+      </header>
+      <div class="case-grid">
+        <section class="case-block"><h3>Context</h3><p>A business-critical system with user access, system-to-system flows, privileged operations, external connectivity, and sensitive financial data.</p></section>
+        <section class="case-block"><h3>Security question</h3><p>Which access paths reach critical components, what identities and permissions they use, and where preventive or detective controls may be bypassed?</p></section>
+        <section class="case-block"><h3>Assessment</h3><ul><li>Mapped entry points, network zones, trust boundaries, service identities, and administrative access.</li><li>Reviewed authentication, authorization, sensitive operations, logging, monitoring, and data movement.</li></ul></section>
+        <section class="case-block"><h3>Decision</h3><p>Separate business, service, and privileged-access paths; constrain external ingress; and attach authentication, least privilege, logging, and approval evidence to each path.</p></section>
+        <section class="case-block full"><h3>Evidence</h3><p>A reference architecture, access-path inventory, control mapping, open-gap list, remediation requirements, and residual-risk record.</p></section>
+      </div>
+      <div class="diagram-wrap">
+        <div class="diagram-bar"><span>Sanitized reference architecture</span><a href="/work/fund-system-architecture.html" target="_blank">Open full size ↗</a></div>
+        <iframe src="/work/fund-system-architecture.html" title="Fund system security reference architecture"></iframe>
+      </div>
+      <p class="disclosure">This reference case is generalized and sanitized. It illustrates the assessment method and control relationships, not a production environment or a specific employer's system.</p>
+    </article>
+
+    <article class="case" id="assurance">
+      <header class="case-head">
+        <p class="case-type">Ongoing operational framework · AppSec assurance</p>
+        <h2>Application Security Assurance</h2>
+        <p class="case-summary">A repeatable path from application inventory and new vulnerability information to scoped remediation, acceptance evidence, and closure.</p>
+      </header>
+      <div class="case-grid">
+        <section class="case-block"><h3>Context</h3><p>Application, OS, middleware, ownership, and security-control data were fragmented, making new findings difficult to scope consistently.</p></section>
+        <section class="case-block"><h3>Security question</h3><p>When a new finding arrives, which applications are actually exposed, what conditions make it relevant, and what proves remediation is complete?</p></section>
+        <section class="case-block"><h3>Assessment</h3><ul><li>Correlate findings with application architecture, technology stack, exposed interfaces, roles, and data.</li><li>Assess applicability, prerequisites, control coverage, impact, ownership, and remediation priority.</li></ul></section>
+        <section class="case-block"><h3>Decision</h3><p>Use a common evidence model: risk statement, security requirement, acceptance criteria, validation evidence, and residual risk.</p></section>
+        <section class="case-block full">
+          <h3>Operating flow</h3>
+          <div class="flow"><span class="step">Inventory baseline</span><span class="step">Finding triage</span><span class="step">Impact scope</span><span class="step">Remediation</span><span class="step">Verify &amp; close</span></div>
+        </section>
+        <section class="case-block full"><h3>Evidence</h3><p>Application and technology-stack inventory, control-coverage matrix, scoped remediation tickets, implementation evidence, validation results, and documented exceptions.</p></section>
+      </div>
+      <p class="disclosure">This describes an operating framework and evolving area of responsibility. It separates security judgment and acceptance from implementation work performed by application or operations teams.</p>
+    </article>
+  </main>
+
+  <footer class="container">© 2026 Celeste Huang · <a href="/">Home</a></footer>
+</body>
+</html>
