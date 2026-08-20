@@ -47,18 +47,12 @@
   .main{position:relative;width:1432px;height:620px;margin-top:22px}
   .glass,.card,.control{background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow);backdrop-filter:blur(16px) saturate(135%)}
   .glass{position:absolute;border-radius:20px}
-
-  .internal-env{
-    left:0;top:0;width:1432px;height:530px;
-    background:color-mix(in srgb,var(--green) 3%,var(--surface));
-    box-shadow:var(--shadow),inset 0 0 0 1.4px color-mix(in srgb,var(--green) 40%,transparent)
-  }
+  .internal-env{left:0;top:0;width:1432px;height:530px;background:color-mix(in srgb,var(--green) 3%,var(--surface));box-shadow:var(--shadow),inset 0 0 0 1.4px color-mix(in srgb,var(--green) 40%,transparent)}
   .internal-heading{position:absolute;left:18px;top:14px;z-index:6;display:flex;align-items:center;gap:10px;font-size:18px;font-weight:820}
   .internal-note{position:absolute;left:64px;top:43px;z-index:6;color:var(--muted);font-size:11px;font-weight:650}
   .zone-icon{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;color:white}
   .zone-icon.green{background:linear-gradient(135deg,var(--green),#2e9f6e)}
   .zone-icon svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-
   .subzone{position:absolute;top:78px;height:420px;border-radius:17px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow)}
   .endpoint-zone{left:28px;width:448px;background:color-mix(in srgb,var(--primary) 7%,var(--surface));border-color:color-mix(in srgb,var(--primary) 40%,transparent)}
   .capability-zone{left:500px;width:350px;background:color-mix(in srgb,var(--purple) 7%,var(--surface));border-color:color-mix(in srgb,var(--purple) 42%,transparent)}
@@ -66,7 +60,6 @@
   .subzone-title{position:absolute;left:14px;top:13px;font-size:14px;font-weight:820}
   .subzone-note{position:absolute;left:14px;top:36px;color:var(--muted);font-size:10.5px;font-weight:640}
   .subzone-badge{position:absolute;right:13px;top:13px;padding:4px 8px;border:1px dashed color-mix(in srgb,var(--purple) 48%,transparent);border-radius:999px;color:var(--muted);font-size:9.5px;font-weight:760;letter-spacing:.05em;text-transform:uppercase}
-
   .card{position:absolute;z-index:5;border-radius:16px;display:grid;place-items:center;align-content:center;text-align:center;background:var(--strong)}
   .card-icon{width:52px;height:52px;margin-bottom:9px;fill:none;stroke-width:2.35;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 7px 10px color-mix(in srgb,var(--primary) 20%,transparent))}
   .card-title{font-size:15px;font-weight:820;line-height:1.2}
@@ -77,7 +70,6 @@
   .internal-card{left:1010px;top:165px;width:280px;height:184px}
   .internal-icons{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:12px}
   .internal-icons svg{width:42px;height:42px;fill:none;stroke:var(--green);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-
   .flow{position:absolute;inset:0;z-index:3;width:100%;height:100%;pointer-events:none;overflow:visible}
   .line{fill:none;stroke:var(--primary);stroke-width:3;stroke-linecap:round;opacity:.62}
   .stream{fill:none;stroke:var(--glow);stroke-width:5;stroke-linecap:round;stroke-dasharray:22 72;animation:forward 2.05s linear infinite!important;animation-play-state:running!important;will-change:stroke-dashoffset;opacity:.9;filter:drop-shadow(0 0 5px color-mix(in srgb,var(--primary) 46%,transparent))}
@@ -86,14 +78,12 @@
   .control-link{fill:none;stroke-width:2;stroke-dasharray:3 6;opacity:.55}
   .control-link.blue{stroke:var(--primary)}.control-link.purple{stroke:var(--purple)}.control-link.green{stroke:var(--green)}
   @keyframes forward{to{stroke-dashoffset:-282}}
-
   .control{position:absolute;z-index:6;height:110px;padding:13px 14px 12px 52px;border-radius:15px;color:var(--muted);font-size:11.5px;font-weight:660;line-height:1.36}
   .control svg{position:absolute;left:14px;top:16px;width:26px;height:26px;fill:none;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
   .control strong{display:block;margin-bottom:3px;color:var(--text);font-size:12.5px}
   .access{left:50px;top:356px;width:404px}.access svg{stroke:var(--primary)}
   .policy{left:520px;top:356px;width:310px}.policy svg{stroke:var(--purple)}
   .downstream{left:894px;top:356px;width:490px}.downstream svg{stroke:var(--green)}
-
   .legend{display:flex;justify-content:center;gap:22px;margin-top:18px;color:var(--muted);font-size:11.5px;font-weight:650}
   .legend-item{display:flex;align-items:center;gap:8px}
   .key{width:18px;height:18px;border-radius:5px;flex:none}
@@ -112,116 +102,43 @@
   <main class="board" id="board">
     <h1>Endpoint-Side AI Agent Access Path</h1>
     <div class="subtitle">A capability-centric view of how an endpoint-side agent reaches approved tools and downstream enterprise applications.</div>
-
     <section class="main">
       <div class="glass internal-env"></div>
-      <div class="internal-heading">
-        <span class="zone-icon green"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
-        Internal Environment
-      </div>
+      <div class="internal-heading"><span class="zone-icon green"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></span>Internal Environment</div>
       <div class="internal-note">Endpoint, capability, and application layers all remain inside the enterprise environment.</div>
-
-      <div class="subzone endpoint-zone">
-        <div class="subzone-title">Endpoint Side</div>
-        <div class="subzone-note">Developer workstation / internal user context</div>
-      </div>
-      <div class="subzone capability-zone">
-        <div class="subzone-title">Capability Layer</div>
-        <div class="subzone-note">Skills / MCP servers / tools exposed to the agent</div>
-        <div class="subzone-badge">Governed capability boundary</div>
-      </div>
-      <div class="subzone application-zone">
-        <div class="subzone-title">Application / Service Environment</div>
-        <div class="subzone-note">Internal APIs, applications, data, and platform targets</div>
-      </div>
-
-      <div class="card developer">
-        <svg class="card-icon" viewBox="0 0 64 64"><circle cx="32" cy="20" r="10"/><path d="M14 52c2-13 10-19 18-19s16 6 18 19"/></svg>
-        <div class="card-title">Developer</div>
-        <div class="card-sub">Internal user</div>
-      </div>
-
-      <div class="card agent">
-        <svg class="card-icon" viewBox="0 0 64 64"><rect x="12" y="17" width="40" height="31" rx="9"/><path d="M32 17V9"/><circle cx="32" cy="7" r="3"/><circle cx="24" cy="31" r="2.5"/><circle cx="40" cy="31" r="2.5"/><path d="M24 40c5 4 11 4 16 0"/></svg>
-        <div class="card-title">AI Agent</div>
-        <div class="card-sub">Endpoint-side execution</div>
-      </div>
-
-      <div class="card capability">
-        <svg class="card-icon" viewBox="0 0 64 64"><path d="M26 10h12v12h12v12H38v20H26V34H14V22h12z"/><path d="M32 22v12"/></svg>
-        <div class="card-title">Skill / MCP / Tool</div>
-        <div class="card-sub">Approved capability surface</div>
-      </div>
-
-      <div class="card internal-card">
-        <div class="internal-icons">
-          <svg viewBox="0 0 48 48"><rect x="8" y="8" width="32" height="10" rx="2"/><rect x="8" y="21" width="32" height="10" rx="2"/><rect x="8" y="34" width="32" height="6" rx="2"/><circle cx="13" cy="13" r="1"/><circle cx="13" cy="26" r="1"/></svg>
-          <svg viewBox="0 0 48 48"><path d="M24 5l15 9v20l-15 9-15-9V14z"/><path d="M17 29V18h6c5 0 8 2 8 5s-3 6-8 6z"/></svg>
-          <svg viewBox="0 0 48 48"><ellipse cx="24" cy="10" rx="14" ry="6"/><path d="M10 10v24c0 4 6 7 14 7s14-3 14-7V10"/><path d="M10 22c0 4 6 7 14 7s14-3 14-7"/></svg>
-        </div>
-        <div class="card-title">Internal App / API / Environment</div>
-        <div class="card-sub">Application, service, data, or platform target</div>
-      </div>
-
+      <div class="subzone endpoint-zone"><div class="subzone-title">Endpoint Side</div><div class="subzone-note">Developer workstation / internal user context</div></div>
+      <div class="subzone capability-zone"><div class="subzone-title">Capability Layer</div><div class="subzone-note">Skills / MCP servers / tools exposed to the agent</div><div class="subzone-badge">Governed capability boundary</div></div>
+      <div class="subzone application-zone"><div class="subzone-title">Application / Service Environment</div><div class="subzone-note">Internal APIs, applications, data, and platform targets</div></div>
+      <div class="card developer"><svg class="card-icon" viewBox="0 0 64 64"><circle cx="32" cy="20" r="10"/><path d="M14 52c2-13 10-19 18-19s16 6 18 19"/></svg><div class="card-title">Developer</div><div class="card-sub">Internal user</div></div>
+      <div class="card agent"><svg class="card-icon" viewBox="0 0 64 64"><rect x="12" y="17" width="40" height="31" rx="9"/><path d="M32 17V9"/><circle cx="32" cy="7" r="3"/><circle cx="24" cy="31" r="2.5"/><circle cx="40" cy="31" r="2.5"/><path d="M24 40c5 4 11 4 16 0"/></svg><div class="card-title">AI Agent</div><div class="card-sub">Endpoint-side execution</div></div>
+      <div class="card capability"><svg class="card-icon" viewBox="0 0 64 64"><path d="M26 10h12v12h12v12H38v20H26V34H14V22h12z"/><path d="M32 22v12"/></svg><div class="card-title">Skill / MCP / Tool</div><div class="card-sub">Approved capability surface</div></div>
+      <div class="card internal-card"><div class="internal-icons"><svg viewBox="0 0 48 48"><rect x="8" y="8" width="32" height="10" rx="2"/><rect x="8" y="21" width="32" height="10" rx="2"/><rect x="8" y="34" width="32" height="6" rx="2"/><circle cx="13" cy="13" r="1"/><circle cx="13" cy="26" r="1"/></svg><svg viewBox="0 0 48 48"><path d="M24 5l15 9v20l-15 9-15-9V14z"/><path d="M17 29V18h6c5 0 8 2 8 5s-3 6-8 6z"/></svg><svg viewBox="0 0 48 48"><ellipse cx="24" cy="10" rx="14" ry="6"/><path d="M10 10v24c0 4 6 7 14 7s14-3 14-7V10"/><path d="M10 22c0 4 6 7 14 7s14-3 14-7"/></svg></div><div class="card-title">Internal App / API / Environment</div><div class="card-sub">Application, service, data, or platform target</div></div>
       <svg class="flow" viewBox="0 0 1432 620" preserveAspectRatio="none" aria-hidden="true">
-        <defs>
-          <marker id="arrowBlue" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--primary)"/></marker>
-          <marker id="arrowPurple" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--purple)"/></marker>
-          <marker id="arrowGreen" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--green)"/></marker>
-        </defs>
-        <path class="line" d="M196 257 H332" marker-end="url(#arrowBlue)"/>
+        <path class="line" d="M196 257 H332"/>
         <path class="stream" d="M196 257 H332"/>
-        <path class="line cap" d="M468 257 H580" marker-end="url(#arrowPurple)"/>
+        <path class="line cap" d="M468 257 H580"/>
         <path class="stream cap" d="M468 257 H580"/>
-        <path class="line target" d="M770 257 H1010" marker-end="url(#arrowGreen)"/>
+        <path class="line target" d="M770 257 H1010"/>
         <path class="stream target" d="M770 257 H1010"/>
-
         <path class="control-link blue" d="M252 332 V356"/>
         <path class="control-link purple" d="M675 332 V356"/>
         <path class="control-link green" d="M1139 349 V356"/>
       </svg>
-
-      <div class="control access">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 21c1-5 3-8 7-8s6 3 7 8"/></svg>
-        <strong>Identity & user context</strong>
-        The agent begins with a user and endpoint context; identity should not automatically become unrestricted machine authority.
-      </div>
-      <div class="control policy">
-        <svg viewBox="0 0 24 24"><path d="M12 3l7 4v10l-7 4-7-4V7z"/><path d="M9 12l2 2 4-4"/></svg>
-        <strong>Capability governance</strong>
-        Approved Skills and MCP servers define what the agent can discover and invoke, ideally through a controlled capability hub.
-      </div>
-      <div class="control downstream">
-        <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 9h8M8 13h5"/></svg>
-        <strong>Application & Network Security</strong>
-        Once the call reaches an API, application, or network boundary, existing authorization and connectivity controls still apply.
-      </div>
+      <div class="control access"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 21c1-5 3-8 7-8s6 3 7 8"/></svg><strong>Identity & user context</strong>The agent begins with a user and endpoint context; identity should not automatically become unrestricted machine authority.</div>
+      <div class="control policy"><svg viewBox="0 0 24 24"><path d="M12 3l7 4v10l-7 4-7-4V7z"/><path d="M9 12l2 2 4-4"/></svg><strong>Capability governance</strong>Approved Skills and MCP servers define what the agent can discover and invoke, ideally through a controlled capability hub.</div>
+      <div class="control downstream"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 9h8M8 13h5"/></svg><strong>Application & Network Security</strong>Once the call reaches an API, application, or network boundary, existing authorization and connectivity controls still apply.</div>
     </section>
-
-    <div class="legend">
-      <div class="legend-item"><span class="legend-line"></span> Animated approved flow</div>
-      <div class="legend-item"><span class="key key-outer"></span> Internal environment</div>
-      <div class="legend-item"><span class="key key-blue"></span> Endpoint side</div>
-      <div class="legend-item"><span class="key key-purple"></span> Capability layer</div>
-      <div class="legend-item"><span class="key key-green"></span> Application / service environment</div>
-    </div>
+    <div class="legend"><div class="legend-item"><span class="legend-line"></span> Animated approved flow</div><div class="legend-item"><span class="key key-outer"></span> Internal environment</div><div class="legend-item"><span class="key key-blue"></span> Endpoint side</div><div class="legend-item"><span class="key key-purple"></span> Capability layer</div><div class="legend-item"><span class="key key-green"></span> Application / service environment</div></div>
     <div class="footnote">Technology-agnostic reference view &middot; Endpoint-side agent governance</div>
   </main>
 </div>
 <script>
   const board=document.getElementById('board');
   const toggle=document.getElementById('themeToggle');
-  function scaleBoard(){
-    const pad=22;
-    const scale=Math.min((window.innerWidth-pad*2)/1480,(window.innerHeight-pad*2)/900,1);
-    const left=(window.innerWidth-1480*scale)/2;
-    const top=(window.innerHeight-900*scale)/2;
-    board.style.transform=`translate(${left}px,${top}px) scale(${scale})`;
-  }
+  function scaleBoard(){const pad=22;const scale=Math.min((window.innerWidth-pad*2)/1480,(window.innerHeight-pad*2)/900,1);const left=(window.innerWidth-1480*scale)/2;const top=(window.innerHeight-900*scale)/2;board.style.transform=`translate(${left}px,${top}px) scale(${scale})`;}
   function syncToggle(){toggle.textContent=document.documentElement.dataset.theme==='dark'?'Light mode':'Dark mode'}
   toggle.addEventListener('click',()=>{document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark';syncToggle()});
-  window.addEventListener('resize',scaleBoard);
-  scaleBoard();syncToggle();
+  window.addEventListener('resize',scaleBoard);scaleBoard();syncToggle();
 </script>
 </body>
 </html>
