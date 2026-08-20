@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<title>Capability Hub and Bypass Control</title>
+<style>
+  :root{
+    color-scheme:dark;
+    --surface:rgba(255,255,255,.055);
+    --strong:rgba(255,255,255,.085);
+    --text:#e8eefc;
+    --muted:#a8b2ca;
+    --border:rgba(255,255,255,.11);
+    --primary:#8aa2ff;
+    --glow:#b7c7ff;
+    --purple:#b29cff;
+    --green:#72d6a1;
+    --teal:#68e1d4;
+    --red:#ff8585;
+    --red-soft:#ffb1b1;
+    --shadow:0 18px 54px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,255,255,.08);
+    --page:radial-gradient(circle at 15% 12%,rgba(91,124,255,.22),transparent 29%),radial-gradient(circle at 84% 80%,rgba(139,109,255,.17),transparent 31%),linear-gradient(135deg,#07101e,#0b1728 50%,#120f24);
+  }
+  html[data-theme="light"]{
+    color-scheme:light;
+    --surface:rgba(255,255,255,.75);
+    --strong:rgba(255,255,255,.92);
+    --text:#172033;
+    --muted:#667089;
+    --border:rgba(23,32,51,.11);
+    --primary:#5b7cff;
+    --glow:#7fa1ff;
+    --purple:#8b6dff;
+    --green:#2e9f6e;
+    --teal:#2fb8a6;
+    --red:#dc4d4d;
+    --red-soft:#ef7777;
+    --shadow:0 16px 44px rgba(27,39,78,.10),inset 0 1px 0 rgba(255,255,255,.8);
+    --page:radial-gradient(circle at 15% 15%,rgba(91,124,255,.18),transparent 29%),radial-gradient(circle at 84% 80%,rgba(139,109,255,.14),transparent 31%),linear-gradient(135deg,#f8fbff,#edf6ff 50%,#f8f5ff);
+  }
+  *{box-sizing:border-box}
+  html,body{width:100%;height:100%;margin:0;overflow:hidden}
+  body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--page);color:var(--text)}
+  .stage{position:fixed;inset:0;overflow:hidden}
+  .board{position:absolute;width:1480px;height:900px;padding:24px;border:1px solid var(--border);border-radius:28px;background:rgba(9,17,31,.54);box-shadow:0 28px 80px rgba(0,0,0,.28);backdrop-filter:blur(22px) saturate(135%);transform-origin:top left;overflow:hidden}
+  html[data-theme="light"] .board{background:rgba(255,255,255,.38)}
+  h1{margin:0;font-size:25px;letter-spacing:-.025em;font-weight:830}
+  .subtitle{margin-top:6px;color:var(--muted);font-size:13px;font-weight:560}
+  .main{position:relative;width:1432px;height:650px;margin-top:22px}
+  .glass,.card,.control,.external-card{background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow);backdrop-filter:blur(16px) saturate(135%)}
+  .glass{position:absolute;border-radius:20px}
+
+  .internal-env{left:0;top:0;width:1432px;height:510px;background:color-mix(in srgb,var(--green) 3%,var(--surface));box-shadow:var(--shadow),inset 0 0 0 1.4px color-mix(in srgb,var(--green) 40%,transparent)}
+  .env-heading{position:absolute;left:18px;top:14px;z-index:7;display:flex;align-items:center;gap:10px;font-size:18px;font-weight:820}
+  .env-note{position:absolute;left:64px;top:43px;z-index:7;color:var(--muted);font-size:11px;font-weight:650}
+  .zone-icon{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;color:white;background:linear-gradient(135deg,var(--green),#2e9f6e)}
+  .zone-icon svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+  .subzone{position:absolute;top:78px;height:390px;border-radius:17px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow)}
+  .endpoint-zone{left:28px;width:382px;background:color-mix(in srgb,var(--primary) 7%,var(--surface));border-color:color-mix(in srgb,var(--primary) 40%,transparent)}
+  .capability-zone{left:434px;width:970px;background:color-mix(in srgb,var(--purple) 7%,var(--surface));border-color:color-mix(in srgb,var(--purple) 42%,transparent)}
+  .subzone-title{position:absolute;left:14px;top:13px;font-size:14px;font-weight:820}
+  .subzone-note{position:absolute;left:14px;top:36px;color:var(--muted);font-size:10.5px;font-weight:640}
+  .subzone-badge{position:absolute;right:13px;top:13px;padding:4px 8px;border:1px dashed color-mix(in srgb,var(--purple) 48%,transparent);border-radius:999px;color:var(--muted);font-size:9.5px;font-weight:760;letter-spacing:.05em;text-transform:uppercase}
+
+  .card{position:absolute;z-index:6;border-radius:16px;display:grid;place-items:center;align-content:center;text-align:center;background:var(--strong)}
+  .card-icon{width:50px;height:50px;margin-bottom:9px;fill:none;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
+  .card-title{font-size:15px;font-weight:820;line-height:1.2}
+  .card-sub{margin-top:6px;color:var(--muted);font-size:11.5px;line-height:1.38}
+  .developer{left:58px;top:174px;width:136px;height:146px}.developer .card-icon{stroke:var(--primary)}
+  .agent{left:244px;top:174px;width:136px;height:146px}.agent .card-icon{stroke:var(--teal)}
+  .hub{left:530px;top:164px;width:230px;height:166px}.hub .card-icon{stroke:var(--purple)}
+  .approved{left:930px;top:174px;width:230px;height:146px}.approved .card-icon{stroke:var(--green)}
+
+  .control{position:absolute;left:515px;top:362px;width:330px;height:82px;z-index:7;border-radius:15px;padding:14px 16px 12px 56px;color:var(--muted);font-size:11.5px;font-weight:660;line-height:1.35;background:var(--strong)}
+  .control svg{position:absolute;left:16px;top:18px;width:27px;height:27px;fill:none;stroke:var(--red);stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
+  .control strong{display:block;margin-bottom:3px;color:var(--text);font-size:12.5px}
+
+  .external-zone{position:absolute;left:1030px;top:540px;width:374px;height:92px;border:1.5px dashed color-mix(in srgb,var(--red) 52%,transparent);border-radius:16px;background:color-mix(in srgb,var(--red) 5%,transparent)}
+  .external-card{position:absolute;left:1060px;top:558px;width:314px;height:58px;border-radius:13px;display:flex;align-items:center;gap:14px;padding:10px 16px;background:var(--strong);z-index:7}
+  .external-card svg{width:30px;height:30px;fill:none;stroke:var(--red);stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round;flex:none}
+  .external-title{font-size:13px;font-weight:820}
+  .external-sub{margin-top:3px;color:var(--muted);font-size:10.5px;font-weight:640}
+
+  .flow{position:absolute;inset:0;z-index:4;width:100%;height:100%;pointer-events:none;overflow:visible}
+  .line{fill:none;stroke-width:3;stroke-linecap:round;opacity:.62}
+  .stream{fill:none;stroke-width:5;stroke-linecap:round;stroke-dasharray:22 72;animation:forward 2.05s linear infinite!important;animation-play-state:running!important;will-change:stroke-dashoffset;opacity:.92}
+  .line.blue{stroke:var(--primary)}.stream.blue{stroke:var(--glow);filter:drop-shadow(0 0 5px color-mix(in srgb,var(--primary) 46%,transparent))}
+  .line.purple{stroke:var(--purple)}.stream.purple{stroke:#cabdff;animation-duration:2.18s!important;filter:drop-shadow(0 0 5px color-mix(in srgb,var(--purple) 44%,transparent))}
+  .line.green{stroke:var(--green)}.stream.green{stroke:#9df0bf;animation-duration:2.3s!important;filter:drop-shadow(0 0 5px color-mix(in srgb,var(--green) 42%,transparent))}
+  .line.red{stroke:var(--red);opacity:.68}.stream.red{stroke:var(--red-soft);animation-duration:1.75s!important;filter:drop-shadow(0 0 5px color-mix(in srgb,var(--red) 46%,transparent))}
+  .unreachable{fill:none;stroke:var(--red);stroke-width:2;stroke-dasharray:5 8;opacity:.32}
+  @keyframes forward{to{stroke-dashoffset:-282}}
+
+  .block-marker{position:absolute;left:984px;top:477px;width:44px;height:44px;z-index:9;border:2px solid var(--red);border-radius:50%;display:grid;place-items:center;background:var(--strong);box-shadow:0 0 0 8px color-mix(in srgb,var(--red) 8%,transparent),0 0 22px color-mix(in srgb,var(--red) 28%,transparent);animation:blockPulse 1.75s ease-in-out infinite}
+  .block-marker::before,.block-marker::after{content:"";position:absolute;width:21px;height:2.5px;border-radius:99px;background:var(--red)}
+  .block-marker::before{transform:rotate(45deg)}.block-marker::after{transform:rotate(-45deg)}
+  @keyframes blockPulse{0%,58%,100%{transform:scale(1);box-shadow:0 0 0 7px color-mix(in srgb,var(--red) 6%,transparent),0 0 18px color-mix(in srgb,var(--red) 22%,transparent)}72%{transform:scale(1.08);box-shadow:0 0 0 12px color-mix(in srgb,var(--red) 10%,transparent),0 0 28px color-mix(in srgb,var(--red) 34%,transparent)}}
+
+  .legend{display:flex;justify-content:center;gap:24px;margin-top:16px;color:var(--muted);font-size:11.5px;font-weight:650}
+  .legend-item{display:flex;align-items:center;gap:8px}
+  .legend-line{width:50px;height:4px;border-radius:999px;background:linear-gradient(90deg,var(--primary),var(--glow));box-shadow:0 0 8px color-mix(in srgb,var(--primary) 42%,transparent)}
+  .legend-red{width:50px;height:4px;border-radius:999px;background:linear-gradient(90deg,var(--red),var(--red-soft));box-shadow:0 0 8px color-mix(in srgb,var(--red) 35%,transparent)}
+  .key{width:18px;height:18px;border-radius:5px;flex:none}
+  .key-purple{border:1.5px solid var(--purple);background:color-mix(in srgb,var(--purple) 10%,transparent)}
+  .key-red{border:1.5px dashed var(--red);background:color-mix(in srgb,var(--red) 7%,transparent)}
+  .footnote{margin-top:12px;text-align:center;color:var(--muted);font-size:11.5px}
+  .theme-toggle{position:fixed;right:14px;top:12px;z-index:9999;padding:7px 11px;border:1px solid var(--border);border-radius:999px;background:var(--strong);box-shadow:var(--shadow);color:var(--text);font-size:12px;font-weight:760;cursor:pointer;backdrop-filter:blur(12px)}
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button">Light mode</button>
+<div class="stage">
+  <main class="board" id="board">
+    <h1>Capability Hub and Bypass Control</h1>
+    <div class="subtitle">Approved capabilities remain reachable through the governed path, while direct access to unapproved external Skills or MCP sources is blocked at the network boundary.</div>
+
+    <section class="main">
+      <div class="glass internal-env"></div>
+      <div class="env-heading"><span class="zone-icon"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></span>Internal Environment</div>
+      <div class="env-note">Enterprise endpoint and governed capability path</div>
+
+      <div class="subzone endpoint-zone"><div class="subzone-title">Endpoint Side</div><div class="subzone-note">Developer workstation / AI agent</div></div>
+      <div class="subzone capability-zone"><div class="subzone-title">Governed Capability Layer</div><div class="subzone-note">Centralized capability hub and approved enterprise Skills / MCP</div><div class="subzone-badge">Trusted capability path</div></div>
+
+      <div class="card developer"><svg class="card-icon" viewBox="0 0 64 64"><circle cx="32" cy="20" r="10"/><path d="M14 52c2-13 10-19 18-19s16 6 18 19"/></svg><div class="card-title">Developer</div><div class="card-sub">Internal user</div></div>
+      <div class="card agent"><svg class="card-icon" viewBox="0 0 64 64"><rect x="12" y="17" width="40" height="31" rx="9"/><path d="M32 17V9"/><circle cx="32" cy="7" r="3"/><circle cx="24" cy="31" r="2.5"/><circle cx="40" cy="31" r="2.5"/><path d="M24 40c5 4 11 4 16 0"/></svg><div class="card-title">AI Agent</div><div class="card-sub">Endpoint execution</div></div>
+      <div class="card hub"><svg class="card-icon" viewBox="0 0 64 64"><rect x="11" y="13" width="42" height="38" rx="9"/><path d="M21 24h22M21 32h22M21 40h14"/><circle cx="18" cy="24" r="1"/><circle cx="18" cy="32" r="1"/><circle cx="18" cy="40" r="1"/></svg><div class="card-title">Approved Capability Hub</div><div class="card-sub">Reviewed, controlled, auditable</div></div>
+      <div class="card approved"><svg class="card-icon" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94z"/></svg><div class="card-title">Approved Skill / MCP</div><div class="card-sub">Enterprise-approved capability</div></div>
+
+      <div class="control"><svg viewBox="0 0 24 24"><path d="M12 3l7 4v5c0 5-3 8-7 9-4-1-7-4-7-9V7z"/><path d="M8 12h8M12 8v8"/></svg><strong>Proxy / Egress Control</strong>Destination allowlists, egress filtering, and segmentation prevent direct reachability to unapproved sources.</div>
+
+      <div class="external-zone"></div>
+      <div class="external-card"><svg viewBox="0 0 24 24"><path d="M12 3l9 16H3z"/><path d="M12 9v4M12 17h.01"/></svg><div><div class="external-title">External / Unapproved Skill or MCP Source</div><div class="external-sub">Outside the trusted enterprise capability path</div></div></div>
+
+      <svg class="flow" viewBox="0 0 1432 650" preserveAspectRatio="none" aria-hidden="true">
+        <path class="line blue" d="M194 247 H244"/><path class="stream blue" d="M194 247 H244"/>
+        <path class="line purple" d="M380 247 H530"/><path class="stream purple" d="M380 247 H530"/>
+        <path class="line green" d="M760 247 H930"/><path class="stream green" d="M760 247 H930"/>
+
+        <path class="line red" d="M312 320 V404 H515"/><path class="stream red" d="M312 320 V404 H515"/>
+        <path class="line red" d="M845 404 H1006 V498"/><path class="stream red" d="M845 404 H1006 V498"/>
+        <path class="unreachable" d="M1006 521 V587 H1060"/>
+      </svg>
+      <div class="block-marker" aria-label="Blocked"></div>
+    </section>
+
+    <div class="legend">
+      <div class="legend-item"><span class="legend-line"></span> Approved capability flow</div>
+      <div class="legend-item"><span class="legend-red"></span> Bypass attempt</div>
+      <div class="legend-item"><span class="key key-purple"></span> Governed capability layer</div>
+      <div class="legend-item"><span class="key key-red"></span> Unapproved external source</div>
+    </div>
+    <div class="footnote">Technology-agnostic reference view &middot; Capability hub and egress enforcement</div>
+  </main>
+</div>
+<script>
+  const board=document.getElementById('board');
+  const toggle=document.getElementById('themeToggle');
+  function scaleBoard(){
+    const pad=22;
+    const scale=Math.min((window.innerWidth-pad*2)/1480,(window.innerHeight-pad*2)/900,1);
+    const left=(window.innerWidth-1480*scale)/2;
+    const top=(window.innerHeight-900*scale)/2;
+    board.style.transform=`translate(${left}px,${top}px) scale(${scale})`;
+  }
+  function syncToggle(){toggle.textContent=document.documentElement.dataset.theme==='dark'?'Light mode':'Dark mode'}
+  toggle.addEventListener('click',()=>{document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark';syncToggle()});
+  window.addEventListener('resize',scaleBoard);
+  scaleBoard();syncToggle();
+</script>
+</body>
+</html>
