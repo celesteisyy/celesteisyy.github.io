@@ -19,5 +19,13 @@
     "source": "dist/purify.min.js",
     "sha256": "2c90a9b46d6463f26038a29b686e82bc91de01fdac9d5229e7cfe3b360134ea2",
     "license": "(MPL-2.0 OR Apache-2.0)"
+  },
+  {
+    "package": "katex",
+    "version": "0.19.0",
+    "source": "dist/katex.min.js, dist/katex.min.css, dist/fonts/*.woff2",
+    "sha256": "103a53763cc033bba8d175bf3f0ba597c3505c9b6747dd3f2c7bc2a6bfcc8ae7",
+    "license": "MIT",
+    "notes": "CSS keeps WOFF2 fonts only; no external CDN."
   }
 ]

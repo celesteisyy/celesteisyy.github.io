@@ -18,7 +18,7 @@ test("CSP precedes resources and permits only the exact integrity-pinned scripts
     assert.deepEqual(policy.get(name), ["'none'"]);
   }
   const scripts = [...html.matchAll(/<script\s+([^>]*)><\/script>/g)];
-  assert.equal(scripts.length, 5);
+  assert.equal(scripts.length, 7);
   const hashes = scripts.map(([, attrs]) => {
     const src = attrs.match(/src="([^"]+)"/)[1];
     assert.ok(!src.startsWith("http"));
@@ -36,3 +36,4 @@ test("CSP precedes resources and permits only the exact integrity-pinned scripts
     "https://us-east-20g8lq71sw.auth.us-east-2.amazoncognito.com"
   ]);
 });
+
