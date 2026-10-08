@@ -18,7 +18,7 @@ async function mount(t, mode) {
   const context = await browser.newContext({ acceptDownloads: true });
   const page = await context.newPage();
   const calls = [], errors = [];
-  const state = { nonce: "", token: "access-test", refreshes: 0, revoked: 0, reject: false };
+  const state = { nonce: "", token: "access-test", refreshes: 0, revoked: 0, reject: false, reply: 'Hello **Cyssie**. ' + malicious };
   page.on("pageerror", e => errors.push(e.message));
   await context.route("**/*", async route => {
     const req = route.request();
@@ -32,10 +32,13 @@ async function mount(t, mode) {
     const json = (body, status = 200) => route.fulfill({ status, headers: cors, contentType: "application/json", body: JSON.stringify(body) });
     if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
     if (url.origin === new URL(CALLBACK).origin) {
+      if (url.pathname === "/" || url.pathname === "/blogs/") {
+        return route.fulfill({ contentType: "text/html", body: "<h1>Public page</h1>" });
+      }
       const relative = decodeURIComponent(url.pathname.slice("/playground/".length));
       const file = path.resolve(root, relative || "index.html");
       if (!file.startsWith(root + path.sep) || !fs.existsSync(file)) return route.fulfill({ status: 404, body: "missing" });
-      const contentType = file.endsWith(".js") ? "application/javascript" : file.endsWith(".css") ? "text/css" : "text/html";
+      const contentType = file.endsWith(".js") ? "application/javascript" : file.endsWith(".css") ? "text/css" : file.endsWith(".woff2") ? "font/woff2" : "text/html";
       return route.fulfill({ contentType, body: fs.readFileSync(file) });
     }
     if (url.origin === API) {
@@ -44,7 +47,7 @@ async function mount(t, mode) {
       });
       if (!req.headers().authorization || state.reject) return json({ detail: "Unauthorized" }, 401);
       if (url.pathname === "/auth/me") return json({ authenticated: true });
-      if (url.pathname === "/chat_stream") return route.fulfill({ headers: cors, contentType: "text/plain", body: `Hello **Cyssie**. ${malicious}` });
+      if (url.pathname === "/chat_stream") return route.fulfill({ headers: cors, contentType: "text/plain", body: state.reply });
       if (url.pathname === "/vision") return json({ response: "Image received." });
       if (url.pathname.startsWith("/downloads/")) return route.fulfill({ headers: cors, contentType: "application/vnd.jgraph.mxfile", body: "<mxfile/>" });
       return json({ status: "reset" });
@@ -91,6 +94,65 @@ async function send(page, text) {
   await page.waitForFunction(() => !document.querySelector("#sendButton").disabled);
 }
 
+test("LaTeX renders after chat and reload with strict CSP; code, currency and hostile input stay safe", { timeout: 60000 }, async t => {
+  const { page, calls, errors, state } = await mount(t, "legacy");
+  await page.locator("#tokenInput").fill("legacy-test");
+  await page.locator("#saveTokenButton").click();
+  const fence = String.fromCharCode(96).repeat(3);
+  state.reply = [
+    "Arrow $\\rightarrow$ and \\(x^2\\).",
+    "$$\\frac{a}{b}$$",
+    "\\[\\sqrt{x}\\]",
+    "Prices $5 and $10.",
+    "<code>$x$</code>",
+    fence + "latex\n$\\rightarrow$\n" + fence,
+    "$\\badCommand{x}$",
+    "$\\href{javascript:alert(1)}{click}$",
+    "$\\includegraphics{https://evil.example/leak}$",
+    "$\\htmlStyle{background:url(https://evil.example/leak)}{x}$",
+    "<span style=\"position:fixed\" onclick=\"window.__attack=1\">Safe text</span>",
+    malicious
+  ].join("\n\n");
+  await send(page, "math please");
+  assert.equal(await page.locator("#chat .katex").count(), 6);
+  assert.match(await page.locator("#chat").innerText(), /→/);
+  assert.equal(await page.locator("#chat pre code").innerText(), "$\\rightarrow$\n");
+  assert.ok((await page.locator("#chat code").allTextContents()).includes("$x$"));
+  assert.match(await page.locator("#chat").innerText(), /Prices \$5 and \$10/);
+  assert.equal(await page.locator("#chat .math-fallback").count(), 2);
+  assert.equal(await page.locator("#chat .katex a,#chat .katex img").count(), 0);
+  assert.equal(await page.locator("#chat img,#chat script,#chat style,#chat iframe").count(), 0);
+  assert.equal(await page.locator("#chat [onclick]").count(), 0);
+  assert.equal(await page.evaluate(() => window.__attack), undefined);
+  assert.ok(!calls.some(c => c.url.startsWith("https://evil.example/")));
+  await page.evaluate(() => document.fonts.ready);
+  assert.ok(calls.some(c => c.url.endsWith(".woff2")));
+  assert.ok(await page.locator("#chat .katex [style]").evaluateAll(nodes =>
+    nodes.some(node => node.style.height && getComputedStyle(node).height !== "0px")));
+  await page.reload();
+  await page.waitForFunction(() => !document.querySelector("#saveTokenButton").disabled);
+  assert.equal(await page.locator("#chat .katex").count(), 6);
+  assert.deepEqual(errors, []);
+});
+
+test("signed-out visitors can use the banner on desktop and mobile without authorizing API calls", { timeout: 60000 }, async t => {
+  const { page, calls, errors } = await mount(t, "cognito");
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: 800 });
+    assert.ok(await page.locator("#tokenModal").isVisible());
+    assert.equal(await page.locator(".workspace").evaluate(el => el.inert), true);
+    for (const [label, pathname] of [["Home", "/"], ["Blogs", "/blogs/"]]) {
+      await page.getByRole("link", { name: label, exact: true }).click();
+      assert.equal(new URL(page.url()).pathname, pathname);
+      await page.goto(CALLBACK);
+      await page.waitForFunction(() => !document.querySelector("#saveTokenButton").disabled);
+    }
+  }
+  assert.ok(!calls.some(c => c.url.startsWith(API) && c.auth));
+  assert.ok(!calls.some(c => /\/chat_stream|\/vision|\/downloads\//.test(c.url)));
+  assert.deepEqual(errors, []);
+});
+
 test("CSP blocks script/network injection while chat, sanitization, upload and downloads work", { timeout: 60000 }, async t => {
   const { page, calls, errors, state } = await mount(t, "legacy");
   await page.locator("#tokenInput").fill("legacy-test");
@@ -105,6 +167,12 @@ test("CSP blocks script/network injection while chat, sanitization, upload and d
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("link", { name: "Diagram", exact: true }).click();
   assert.equal((await downloadPromise).suggestedFilename(), "test.drawio");
+  state.reply = "[Draw.io file](/downloads/diagrams/relative.drawio)";
+  await send(page, "draw an architecture diagram");
+  const relativeDownload = page.waitForEvent("download");
+  await page.getByRole("link", { name: "Draw.io file", exact: true }).click();
+  assert.equal((await relativeDownload).suggestedFilename(), "relative.drawio");
+  assert.ok(calls.some(c => c.url === API + "/downloads/diagrams/relative.drawio" && c.auth === "Bearer legacy-test"));
   await page.locator('input[type="file"]').setInputFiles({ name: "test.png", mimeType: "image/png", buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a4j8AAAAASUVORK5CYII=", "base64") });
   await send(page, "look");
   assert.match(await page.locator("#chat").innerText(), /Image received/);
@@ -159,3 +227,4 @@ test("Cognito PKCE callback, reload, refresh and logout work under the enforced 
   assert.equal(await page.evaluate(() => Object.keys(sessionStorage).filter(k => k.startsWith("cyssie.user.")).length), 0);
   assert.deepEqual(errors, []);
 });
+

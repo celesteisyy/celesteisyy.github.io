@@ -31,6 +31,16 @@ and a temporary blob download, without tokens in links.
 
 ## Vendored dependencies
 
+The signed-out dialog blocks the chat workspace while the sticky public banner
+remains available for Home, Blogs and LinkedIn navigation.
+
+Math uses locally vendored KaTeX 0.19.0 for dollar and backslash delimiters.
+Markdown is sanitized before parsed math is rendered with KaTeX's DOM API,
+with trust disabled, per-formula macros and bounded expansion, size and input.
+Invalid formulas fall back to text; code and escaped dollar signs stay literal.
+The existing CSP still rejects model-supplied scripts and inline styles.
+API-relative generated artifact links are resolved against the API for authenticated downloads.
+
 The exact npm distributions, hashes, versions, and licenses are in
 `vendor/manifest.json` and the adjacent license files. Serving OIDC, Markdown,
 and sanitization scripts locally avoids runtime script CDN dependencies. To
@@ -60,3 +70,4 @@ PKCE generation/exchange, callback cleanup, state/nonce rejection, backend
 authorization rejection, refresh, expiry, logout, origin restrictions, and
 legacy rollout behavior. Actual AWS settings and EC2/Nginx behavior still need
 deployment verification.
+
