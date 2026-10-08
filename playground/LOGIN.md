@@ -40,8 +40,19 @@ required to serve this playground.
 
 ## Verification
 
+The page includes a hash-based CSP before all resources, and every script has
+matching Subresource Integrity. Inline scripts, event handlers, eval, frames,
+objects and forms cannot execute/load; connections are limited to the current
+API, user pool metadata path and exact managed-login domain. Markdown also
+rejects styles, active elements and named-property clobbering. After changing
+scripts or the API/pool/domain, run `node playground/scripts/update-csp.cjs`
+and the checks below. CI also exercises the policy in Chromium. GitHub Pages
+does not let this file set HTTP headers; a meta CSP cannot enforce
+`frame-ancestors`, and does not isolate other pages on the same origin.
+These measures reduce XSS risk; tokens remain JavaScript-accessible.
+
 ```bash
-node --test playground/tests/auth.test.cjs
+node --test playground/tests/auth.test.cjs playground/tests/csp.test.cjs
 ```
 
 Tests execute the real OIDC library against simulated TLS endpoints. They cover

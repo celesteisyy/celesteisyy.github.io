@@ -279,7 +279,10 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       const sanitized = DOMPurify.sanitize(marked.parse(text), {
+        USE_PROFILES: { html: true },
+        SANITIZE_NAMED_PROPS: true,
         FORBID_TAGS: [
+          "style", "link", "meta", "base",
           "img", "picture", "video", "audio", "source", "track",
           "iframe", "object", "embed", "form", "input", "button",
           "svg", "math", "image", "use"
