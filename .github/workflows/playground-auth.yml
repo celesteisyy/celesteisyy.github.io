@@ -1,0 +1,28 @@
+name: Playground authentication
+
+on:
+  push:
+    branches: [main, codex/cognito-login]
+    paths: ["playground/**", ".github/workflows/playground-auth.yml"]
+  pull_request:
+    paths: ["playground/**", ".github/workflows/playground-auth.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - run: node --check playground/app.js
+      - run: node --check playground/auth.js
+      - run: node --test playground/tests/auth.test.cjs playground/tests/csp.test.cjs
+      - name: Browser security and login checks
+        run: |
+          npm install --prefix "$RUNNER_TEMP/cyssie-browser" --no-save --package-lock=false playwright@1.64.0
+          "$RUNNER_TEMP/cyssie-browser/node_modules/.bin/playwright" install --with-deps chromium --only-shell
+          NODE_PATH="$RUNNER_TEMP/cyssie-browser/node_modules" node --test playground/tests/browser.test.cjs

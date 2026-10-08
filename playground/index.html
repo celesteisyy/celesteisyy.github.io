@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-9CTctQj9+T4BN6lwz86PMgfqLj837KX3VWpSh1aDYyo=' 'sha256-LJCptG1kY/JgOKKbaG6CvJHeAf2snVIp58/js2ATTqI=' 'sha256-+Znao4PwnrCQ0K4yIR6cqTHHaEDgjkf88zT8j1908e8=' 'sha256-qlOaencq19PyFzUihveRskK/7KYdvxejX7RQiWt4p3M=' 'sha256-MK8oORrqai7ss7KZW68iLPga/NmIxK8D2RKAMdEVie4='; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; connect-src https://18-118-248-231.sslip.io https://cognito-idp.us-east-2.amazonaws.com/us-east-2_0G8Lq71Sw/ https://us-east-20g8lq71sw.auth.us-east-2.amazoncognito.com; img-src 'self' blob:; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <meta name="referrer" content="no-referrer" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cyssie Playground</title>
   <link rel="stylesheet" href="./style.css?v=20260726-5" />
@@ -31,7 +33,7 @@
 
         <div class="sidebar-actions">
           <button class="primary-btn" id="newChatButton" type="button">New chat</button>
-          <button id="tokenButton" type="button">Access token</button>
+          <button id="tokenButton" type="button">Sign in</button>
         </div>
 
         <div class="sessions" id="sessions"></div>
@@ -78,17 +80,19 @@
     </section>
   </main>
 
-  <div class="token-modal" id="tokenModal">
+  <div class="token-modal" id="tokenModal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
     <div class="modal-card">
-      <h2>Access token</h2>
-      <p>Enter your Cyssie access token. It will be saved only in this browser.</p>
-      <input id="tokenInput" type="password" placeholder="Bearer token" />
-      <button class="primary-btn" id="saveTokenButton" type="button">Save token</button>
+      <h2 id="authTitle">Sign in</h2>
+      <p id="authDescription" role="status" aria-live="polite">Connecting to Cyssie…</p>
+      <input id="tokenInput" type="password" placeholder="Bearer token" aria-label="Access token" hidden />
+      <button class="primary-btn" id="saveTokenButton" type="button" disabled>Connecting…</button>
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.7/dist/purify.min.js"></script>
-  <script src="app.js?v=20260726-4"></script>
+  <script src="vendor/marked-18.1.0.js" integrity="sha256-9CTctQj9+T4BN6lwz86PMgfqLj837KX3VWpSh1aDYyo=" crossorigin="anonymous"></script>
+  <script src="vendor/dompurify-3.4.16.js" integrity="sha256-LJCptG1kY/JgOKKbaG6CvJHeAf2snVIp58/js2ATTqI=" crossorigin="anonymous"></script>
+  <script src="vendor/oidc-client-ts-3.5.0.js" integrity="sha256-+Znao4PwnrCQ0K4yIR6cqTHHaEDgjkf88zT8j1908e8=" crossorigin="anonymous"></script>
+  <script src="auth.js?v=20261008-1" integrity="sha256-qlOaencq19PyFzUihveRskK/7KYdvxejX7RQiWt4p3M=" crossorigin="anonymous"></script>
+  <script src="app.js?v=20261008-2" integrity="sha256-MK8oORrqai7ss7KZW68iLPga/NmIxK8D2RKAMdEVie4=" crossorigin="anonymous"></script>
 </body>
 </html>
