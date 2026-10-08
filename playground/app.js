@@ -38,6 +38,7 @@ function saveSessions() {
 
 document.addEventListener("DOMContentLoaded", () => {
   const chat = document.getElementById("chat");
+  const downloadStatus = document.getElementById("downloadStatus");
   const sessionsEl = document.getElementById("sessions");
   const form = document.getElementById("chatForm");
   const input = document.getElementById("messageInput");
@@ -63,6 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const requiredElements = {
     chat,
+    downloadStatus,
     sessionsEl,
     form,
     input,
@@ -713,20 +715,47 @@ document.addEventListener("DOMContentLoaded", () => {
     const target = new URL(link.href, window.location.href);
     if (target.origin !== new URL(API_BASE).origin || !/^\/(downloads\/|static\/generated\/)/.test(target.pathname)) return;
     event.preventDefault();
+    downloadStatus.hidden = true;
+    let objectUrl = "";
     try {
+      // Old conversation links used StaticFiles; use the attachment endpoints.
+      if (/^\/static\/generated\/[^/]+$/.test(target.pathname)) {
+        const filename = decodeURIComponent(target.pathname.split("/").pop());
+        if (/[\/\\\x00-\x1f]/.test(filename)) throw new Error("Invalid download link.");
+        if (/\.pptx$/i.test(filename)) target.pathname = "/downloads/presentations/" + encodeURIComponent(filename);
+        else if (/\.drawio$/i.test(filename)) target.pathname = "/downloads/diagrams/" + encodeURIComponent(filename);
+      }
       const response = await auth.fetch(target.href);
-      if (!response.ok) throw new Error("Download unavailable.");
-      const objectUrl = URL.createObjectURL(await response.blob());
+      if (!response.ok) {
+        if (response.status === 404 || response.status === 410) {
+          throw new Error("This file is no longer available. Please generate it again.");
+        }
+        throw new Error("Download unavailable (HTTP " + response.status + "). Please try again.");
+      }
+      const blob = await response.blob();
+      let filename = target.pathname.split("/").pop() || "cyssie-download";
+      try { filename = decodeURIComponent(filename); } catch { /* Keep the encoded name. */ }
+      filename = filename.replace(/[\/\\\x00-\x1f]/g, "_");
+      objectUrl = URL.createObjectURL(blob);
       const download = document.createElement("a");
       download.href = objectUrl;
-      download.download = decodeURIComponent(target.pathname.split("/").pop()) || "cyssie-download";
+      download.download = filename;
       document.body.appendChild(download);
       download.click();
       download.remove();
-      setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+      const completedUrl = objectUrl;
+      setTimeout(() => URL.revokeObjectURL(completedUrl), 60000);
+      objectUrl = "";
     } catch (error) {
-      authError = auth.isSignInError(error) ? error.message : "Could not download this file. Please try again.";
-      openTokenModal();
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      if (auth.isSignInError(error)) {
+        authError = error.message;
+        openTokenModal();
+      } else {
+        const expected = /^(This file is no longer available|Download unavailable \(HTTP \d+\)|Invalid download link\.)/.test(error.message || "");
+        downloadStatus.textContent = expected ? error.message : "Download interrupted. Please try again.";
+        downloadStatus.hidden = false;
+      }
     }
   });
 
