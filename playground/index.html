@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-9CTctQj9+T4BN6lwz86PMgfqLj837KX3VWpSh1aDYyo=' 'sha256-LJCptG1kY/JgOKKbaG6CvJHeAf2snVIp58/js2ATTqI=' 'sha256-EDpTdjzAM7uo0XW/Pwull8NQXJtnR90/LHvCpr/Miuc=' 'sha256-VhfOMhRaTFJNHcxaTgtUXUHT3AxUNzWwrvkC9N1uvPs=' 'sha256-+Znao4PwnrCQ0K4yIR6cqTHHaEDgjkf88zT8j1908e8=' 'sha256-qlOaencq19PyFzUihveRskK/7KYdvxejX7RQiWt4p3M=' 'sha256-mi9GcjL8g5xE3mH/QeTBDlnoCSmoQ/7370zVPHnAY3A='; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; connect-src https://18-118-248-231.sslip.io https://cognito-idp.us-east-2.amazonaws.com/us-east-2_0G8Lq71Sw/ https://us-east-20g8lq71sw.auth.us-east-2.amazoncognito.com; img-src 'self' blob:; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-9CTctQj9+T4BN6lwz86PMgfqLj837KX3VWpSh1aDYyo=' 'sha256-LJCptG1kY/JgOKKbaG6CvJHeAf2snVIp58/js2ATTqI=' 'sha256-EDpTdjzAM7uo0XW/Pwull8NQXJtnR90/LHvCpr/Miuc=' 'sha256-VhfOMhRaTFJNHcxaTgtUXUHT3AxUNzWwrvkC9N1uvPs=' 'sha256-+Znao4PwnrCQ0K4yIR6cqTHHaEDgjkf88zT8j1908e8=' 'sha256-qlOaencq19PyFzUihveRskK/7KYdvxejX7RQiWt4p3M=' 'sha256-6gPqSWmuAi20IEfrdAKLUOFXJ7TF0F2DILXwcwZkJhY='; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; connect-src https://18-118-248-231.sslip.io https://cognito-idp.us-east-2.amazonaws.com/us-east-2_0G8Lq71Sw/ https://us-east-20g8lq71sw.auth.us-east-2.amazoncognito.com; img-src 'self' blob:; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
   <meta name="referrer" content="no-referrer" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cyssie Playground</title>
   <link rel="stylesheet" href="./vendor/katex-0.19.0/katex.min.css" />
-  <link rel="stylesheet" href="./style.css?v=20261008-1" />
+  <link rel="stylesheet" href="./style.css?v=20261008-2" />
 </head>
 
 <body>
@@ -71,6 +71,7 @@
           </div>
         </div>
 
+        <p id="downloadStatus" class="download-status" role="status" aria-live="polite" hidden></p>
         <div id="chat"></div>
 
         <form class="composer" id="chatForm">
@@ -96,7 +97,7 @@
   <script src="markdown.js?v=20261008-1" integrity="sha256-VhfOMhRaTFJNHcxaTgtUXUHT3AxUNzWwrvkC9N1uvPs=" crossorigin="anonymous"></script>
   <script src="vendor/oidc-client-ts-3.5.0.js" integrity="sha256-+Znao4PwnrCQ0K4yIR6cqTHHaEDgjkf88zT8j1908e8=" crossorigin="anonymous"></script>
   <script src="auth.js?v=20261008-1" integrity="sha256-qlOaencq19PyFzUihveRskK/7KYdvxejX7RQiWt4p3M=" crossorigin="anonymous"></script>
-  <script src="app.js?v=20261008-3" integrity="sha256-mi9GcjL8g5xE3mH/QeTBDlnoCSmoQ/7370zVPHnAY3A=" crossorigin="anonymous"></script>
+  <script src="app.js?v=20261008-4" integrity="sha256-6gPqSWmuAi20IEfrdAKLUOFXJ7TF0F2DILXwcwZkJhY=" crossorigin="anonymous"></script>
 </body>
 </html>
 

@@ -27,7 +27,12 @@ until expiry, so configure a short access-token lifetime.
 Callback code/state are removed from the URL, and the page sets
 `Referrer-Policy: no-referrer` via a meta tag. Authentication requests reject
 external API origins and redirects. Generated files use authenticated fetch
-and a temporary blob download, without tokens in links.
+and a temporary blob download, without tokens in links. PPTX uses
+`/downloads/presentations/`, Draw.io uses `/downloads/diagrams/`; old static
+links are translated to these endpoints. Deploy the paired backend update
+and restart the API before deploying this download update. Ordinary file,
+network and server errors keep the session and show a message in chat;
+authentication failure opens sign-in.
 
 ## Vendored dependencies
 
