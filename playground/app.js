@@ -48,7 +48,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const deleteChatButton = document.getElementById("deleteChatButton");
   const tokenButton = document.getElementById("tokenButton");
   const tokenModal = document.getElementById("tokenModal");
-  const tokenInput = document.getElementById("tokenInput");
   const saveTokenButton = document.getElementById("saveTokenButton");
   const authTitle = document.getElementById("authTitle");
   const authDescription = document.getElementById("authDescription");
@@ -74,7 +73,6 @@ document.addEventListener("DOMContentLoaded", () => {
     deleteChatButton,
     tokenButton,
     tokenModal,
-    tokenInput,
     saveTokenButton,
     authTitle,
     authDescription,
@@ -289,7 +287,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateAuthUI();
     workspace.inert = true;
     tokenModal.classList.add("visible");
-    setTimeout(() => (auth.mode === "legacy" ? tokenInput : saveTokenButton).focus(), 50);
+    setTimeout(() => saveTokenButton.focus(), 50);
   }
 
   function closeTokenModal() {
@@ -663,15 +661,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   saveTokenButton.addEventListener("click", async (event) => {
     event.preventDefault();
-    if (auth.mode === "legacy" && !authFailed) {
-      const token = tokenInput.value.trim();
-      if (!token) return;
-      auth.setLegacyToken(token);
-      tokenInput.value = "";
-      closeTokenModal();
-      input.focus();
-      return;
-    }
     saveTokenButton.disabled = true;
     try {
       if (authFailed || auth.mode === "loading") await initializeAuth();
@@ -684,13 +673,11 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   function updateAuthUI() {
-    tokenButton.textContent = auth.mode === "legacy" ? "Access token" : auth.hasSession() ? "Sign out" : "Sign in";
-    tokenInput.hidden = auth.mode !== "legacy" || authFailed;
-    authTitle.textContent = auth.mode === "legacy" && !authFailed ? "Access token" : "Sign in";
-    authDescription.textContent = authError || (auth.mode === "legacy"
-      ? "Enter your Cyssie access token. It stays in memory until this page closes."
-      : auth.mode === "loading" ? "Connecting to Cyssie…" : "Sign in with your Cyssie account to continue.");
-    saveTokenButton.textContent = authFailed ? "Retry" : auth.mode === "legacy" ? "Save token" : auth.mode === "loading" ? "Connecting…" : "Sign in";
+    tokenButton.textContent = auth.hasSession() ? "Sign out" : "Sign in";
+    authTitle.textContent = "Sign in";
+    authDescription.textContent = authError || (auth.mode === "loading"
+      ? "Connecting to Cyssie…" : "Sign in with your Cyssie account to continue.");
+    saveTokenButton.textContent = authFailed ? "Retry" : auth.mode === "loading" ? "Connecting…" : "Sign in";
     saveTokenButton.disabled = auth.mode === "loading" && !authFailed;
   }
 
@@ -774,5 +761,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
 
 

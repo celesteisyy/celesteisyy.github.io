@@ -101,23 +101,21 @@ async function finishLogin({ nonceChange, apiStatus = 200, expires = 300 } = {})
   return { ...app, login, get exchange() { return exchange; } };
 }
 
-test("only an old backend 404 enables legacy mode; token stays in memory", async () => {
-  const app = setup({ handler: () => new Response("", { status: 404 }) });
-  await app.auth.initialize();
-  assert.equal(app.auth.mode, "legacy");
-  app.auth.setLegacyToken(" secret ");
-  assert.equal(await app.auth.getToken(), "secret");
-  assert.equal(app.storage.length, 0);
-  const next = setup({ storage: app.storage, handler: () => new Response("", { status: 404 }) });
-  await next.auth.initialize();
-  assert.equal(next.auth.hasSession(), false);
+test("missing login config and explicit legacy mode fail closed", async () => {
+  for (const response of [new Response("", { status: 404 }), Response.json({ mode: "legacy" })]) {
+    const app = setup({ handler: () => response });
+    await assert.rejects(app.auth.initialize());
+    assert.equal(app.auth.hasSession(), false);
+    assert.equal(app.auth.setLegacyToken, undefined);
+    await assert.rejects(app.auth.getToken(), /sign in/);
+  }
 });
 
 test("network failures never silently enable legacy sign-in", async () => {
   const app = setup({ handler: () => { throw new Error("offline"); } });
   await assert.rejects(app.auth.initialize());
   assert.equal(app.auth.mode, "loading");
-  assert.throws(() => app.auth.setLegacyToken("secret"));
+  assert.equal(app.auth.setLegacyToken, undefined);
 });
 
 test("real OIDC library generates PKCE S256, state and nonce, without a client secret", async () => {
@@ -221,4 +219,45 @@ test("logout clears local session, revokes refresh token and ends hosted login",
   assert.equal(logout.searchParams.get("logout_uri"), CALLBACK);
   assert.equal(app.calls.filter(call => call.url === `${HOSTED}/oauth2/revoke`).length, 1);
   assert.equal(app.storage.length, 0);
+});
+
+
+test("page has no shared-token entry and updated scripts match SRI and CSP", () => {
+  const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  assert.doesNotMatch(html, /id="tokenInput"|Bearer token|Save token/);
+  for (const name of ["auth.js", "app.js"]) {
+    const hash = createHash("sha256").update(fs.readFileSync(path.join(root, name))).digest("base64");
+    const tag = html.split("\n").find(line => line.includes(`src="${name}?`));
+    assert.ok(tag.includes(`integrity="sha256-${hash}"`));
+    assert.ok(html.includes(`'sha256-${hash}'`));
+  }
+});
+
+test("chat page initializes without the removed token input", async () => {
+  let ready;
+  const makeElement = () => ({
+    style: {}, value: "", children: [], scrollHeight: 10,
+    classList: { add() {}, remove() {}, toggle() {}, contains() { return false; } },
+    addEventListener() {}, setAttribute() {}, insertBefore() {}, focus() {},
+    appendChild(child) { this.children.push(child); }, querySelector() { return null; }
+  });
+  const elements = new Map();
+  const auth = { mode: "cognito", hasSession: () => false, initialize: async () => {},
+    isSignInError: () => false };
+  const document = {
+    addEventListener(name, fn) { if (name === "DOMContentLoaded") ready = fn; },
+    getElementById(id) {
+      assert.notEqual(id, "tokenInput");
+      if (!elements.has(id)) elements.set(id, makeElement());
+      return elements.get(id);
+    },
+    querySelector: makeElement, createElement: makeElement
+  };
+  const context = vm.createContext({ document, localStorage: new Storage(), console,
+    window: { CyssieAuth: { create: () => auth }, matchMedia: () => ({ matches: false }) },
+    getComputedStyle: () => ({ maxHeight: "160px" }), setTimeout: fn => fn() });
+  vm.runInContext(fs.readFileSync(path.join(root, "app.js"), "utf8"), context);
+  assert.doesNotThrow(() => ready());
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(elements.get("authTitle").textContent, "Sign in");
 });

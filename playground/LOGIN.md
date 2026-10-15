@@ -1,6 +1,6 @@
 # Cyssie account login
 
-The API's public `/auth/config` selects the mode. Cognito mode uses the
+The API's public `/auth/config` supplies Cognito settings. Login uses the
 vendored `oidc-client-ts` library and managed login with authorization code,
 PKCE S256, state, and nonce. The backend independently verifies the access
 token and permits only its configured owner. The browser sends the access
@@ -12,10 +12,9 @@ The library discovers the managed login domain from the pool's OIDC metadata.
 Backend configuration and deployment order are documented in the paired
 `cyssie-api` change's `deploy/COGNITO.md`.
 
-Publish this frontend before switching the backend to Cognito. A 404 from an
-old backend's `/auth/config` enables the existing token dialog; network/server
-errors do not silently fall back. The new API can explicitly select legacy
-mode during rollout. Fixed legacy tokens remain only in memory.
+Shared-token login and its entry field have been removed. A missing
+`/auth/config`, a legacy-mode response, and network/server failures all fail
+closed without enabling any alternative authentication mechanism.
 
 Cognito sessions are stored in the current tab's `sessionStorage`, with refresh
 before token expiry. They are not saved in `localStorage`. Conversations retain
@@ -73,6 +72,7 @@ node --test playground/tests/auth.test.cjs playground/tests/csp.test.cjs
 Tests execute the real OIDC library against simulated TLS endpoints. They cover
 PKCE generation/exchange, callback cleanup, state/nonce rejection, backend
 authorization rejection, refresh, expiry, logout, origin restrictions, and
-legacy rollout behavior. Actual AWS settings and EC2/Nginx behavior still need
+rejection of obsolete shared-token configuration. Actual AWS settings and EC2/Nginx behavior still need
 deployment verification.
+
 

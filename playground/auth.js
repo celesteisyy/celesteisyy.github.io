@@ -20,23 +20,20 @@
     let mode = "loading";
     let manager = null;
     let user = null;
-    let legacyToken = "";
     let config = null;
     let renewing = null;
     let sessionVersion = 0;
 
     const changed = () => onChange();
-    const hasSession = () => mode === "legacy" ? Boolean(legacyToken) : Boolean(user && (!user.expired || user.refresh_token));
+    const hasSession = () => mode === "cognito" && Boolean(user && (!user.expired || user.refresh_token));
     const forgetUser = async () => {
       sessionVersion++;
       user = null;
-      legacyToken = "";
       if (manager) await manager.removeUser();
       changed();
     };
 
     async function getToken() {
-      if (mode === "legacy" && legacyToken) return legacyToken;
       if (mode !== "cognito" || !user) throw new SignInError("Please sign in to Cyssie.");
       if (user.expires_in <= 60) {
         if (!user.refresh_token) {
@@ -88,19 +85,8 @@
         cache: "no-store", credentials: "omit", redirect: "error",
         signal: AbortSignal.timeout(10000)
       });
-      // Compatibility only with the existing backend, which has no auth/config.
-      if (response.status === 404) {
-        mode = "legacy";
-        changed();
-        return;
-      }
       if (!response.ok) throw new Error("Cyssie could not load its sign-in settings. Please retry.");
       config = await response.json();
-      if (config.mode === "legacy") {
-        mode = "legacy";
-        changed();
-        return;
-      }
       if (config.mode !== "cognito" || config.redirect_uri !== `${window.location.origin}/playground/`) {
         throw new Error("Cyssie's sign-in settings need to be checked.");
       }
@@ -177,14 +163,10 @@
       initialize, signIn, signOut, getToken, hasSession,
       fetch: authenticatedFetch,
       get mode() { return mode; },
-      setLegacyToken(token) {
-        if (mode !== "legacy") throw new Error("Password sign-in is required.");
-        legacyToken = token.trim();
-        changed();
-      },
       isSignInError(error) { return error instanceof SignInError; }
     };
   }
 
   window.CyssieAuth = { create };
 })();
+

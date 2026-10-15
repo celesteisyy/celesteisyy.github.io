@@ -163,9 +163,8 @@ test("all artifact downloads carry authentication; ordinary failures preserve si
 });
 
 test("LaTeX renders after chat and reload with strict CSP; code, currency and hostile input stay safe", { timeout: 60000 }, async t => {
-  const { page, calls, errors, state } = await mount(t, "legacy");
-  await page.locator("#tokenInput").fill("legacy-test");
-  await page.locator("#saveTokenButton").click();
+  const { page, calls, errors, state } = await mount(t, "cognito");
+  await signInCognito(page);
   const fence = String.fromCharCode(96).repeat(3);
   state.reply = [
     "Arrow $\\rightarrow$ and \\(x^2\\).",
@@ -222,15 +221,14 @@ test("signed-out visitors can use the banner on desktop and mobile without autho
 });
 
 test("CSP blocks script/network injection while chat, sanitization, upload and downloads work", { timeout: 60000 }, async t => {
-  const { page, calls, errors, state } = await mount(t, "legacy");
-  await page.locator("#tokenInput").fill("legacy-test");
-  await page.locator("#saveTokenButton").click();
+  const { page, calls, errors, state } = await mount(t, "cognito");
+  await signInCognito(page);
   await send(page, "hello");
   assert.match(await page.locator("#chat").innerText(), /Hello Cyssie/);
   assert.equal(await page.locator("#chat script,#chat img,#chat svg,#chat iframe,#chat style,#chat form").count(), 0);
   assert.equal(await page.locator('#chat a[href^="javascript:"]').count(), 0);
   assert.equal(await page.locator("#chat #CyssieAuth").count(), 0);
-  assert.ok(calls.some(c => c.url.endsWith("/chat_stream") && c.auth === "Bearer legacy-test"));
+  assert.ok(calls.some(c => c.url.endsWith("/chat_stream") && c.auth === "Bearer access-test"));
   assert.equal(await page.evaluate(() => window.__attack), undefined);
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("link", { name: "Diagram", exact: true }).click();
@@ -240,11 +238,11 @@ test("CSP blocks script/network injection while chat, sanitization, upload and d
   const relativeDownload = page.waitForEvent("download");
   await page.getByRole("link", { name: "Draw.io file", exact: true }).click();
   assert.equal((await relativeDownload).suggestedFilename(), "relative.drawio");
-  assert.ok(calls.some(c => c.url === API + "/downloads/diagrams/relative.drawio" && c.auth === "Bearer legacy-test"));
+  assert.ok(calls.some(c => c.url === API + "/downloads/diagrams/relative.drawio" && c.auth === "Bearer access-test"));
   await page.locator('input[type="file"]').setInputFiles({ name: "test.png", mimeType: "image/png", buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a4j8AAAAASUVORK5CYII=", "base64") });
   await send(page, "look");
   assert.match(await page.locator("#chat").innerText(), /Image received/);
-  assert.ok(calls.some(c => c.url.endsWith("/vision") && c.auth === "Bearer legacy-test"));
+  assert.ok(calls.some(c => c.url.endsWith("/vision") && c.auth === "Bearer access-test"));
 
   const before = calls.length;
   const blocked = await page.evaluate(async () => {
@@ -296,3 +294,13 @@ test("Cognito PKCE callback, reload, refresh and logout work under the enforced 
   assert.deepEqual(errors, []);
 });
 
+
+
+test("legacy backend configuration cannot offer token entry or authorize chat", { timeout: 30000 }, async t => {
+  const { page, calls, errors } = await mount(t, "legacy");
+  assert.equal(await page.locator("#tokenInput").count(), 0);
+  assert.equal(await page.locator("#saveTokenButton").innerText(), "Retry");
+  assert.equal(await page.locator(".workspace").evaluate(el => el.inert), true);
+  assert.ok(!calls.some(c => c.url.startsWith(API) && c.auth));
+  assert.deepEqual(errors, []);
+});
