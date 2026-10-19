@@ -3,7 +3,7 @@
 (() => {
   const origin = "https://cyth.18-118-248-231.sslip.io";
   const signIn = origin + "/playground/sign-in";
-  const startConversation = "/auth?redirect=%2F&form=signin";
+  const startConversation = "/playground/bootstrap";
   const status = document.getElementById("workspaceStatus");
   if (window.location.origin !== origin) return;
 
@@ -12,14 +12,15 @@
       credentials: "same-origin", cache: "no-store", redirect: "error",
       signal: AbortSignal.timeout(10000),
     });
-    // Never read, copy, or message the response's credentials.
+    // The gate checks only the HTTP status; it never handles credentials.
     return response.status;
   }
 
   if (document.body.dataset.mode === "start") {
     try {
-      // This is Open WebUI's existing, non-secret post-login return-path key.
-      localStorage.setItem("redirectPath", "/playground/login-complete");
+      // Remove the old helper's shared marker. Popup and frame must not race
+      // over Open WebUI's global post-login return path.
+      localStorage.removeItem("redirectPath");
       window.location.replace("/oauth/oidc/login");
     } catch {
       status.textContent = "Could not start sign-in. Please open the full workspace.";
@@ -36,11 +37,40 @@
       status.textContent = "Signed in. You can return to Playground.";
       if (window.opener) {
         window.opener.postMessage({ type: "cyssie-signed-in" }, origin);
-        window.close();
       }
+      window.close();
     }).catch(() => {
       status.textContent = "Could not check sign-in. Please return to Playground.";
     });
+    return;
+  }
+
+  if (document.body.dataset.mode === "bootstrap") {
+    // This document runs only inside the cyth conversation frame. WebUI's
+    // session endpoint validates its HttpOnly cookie and returns its own JWT,
+    // exactly as the native app expects. Never send it to an ancestor/opener.
+    if (window.parent === window) {
+      status.textContent = "Open Playground to continue.";
+      return;
+    }
+    (async () => {
+      try {
+        const response = await fetch("/api/v1/auths/", {
+          credentials: "same-origin", cache: "no-store", redirect: "error",
+          signal: AbortSignal.timeout(10000),
+        });
+        if (!response.ok) throw new Error("Session unavailable");
+        const session = await response.json();
+        if (typeof session.token !== "string" || !session.token || session.token.length > 16384) {
+          throw new Error("Session unavailable");
+        }
+        localStorage.setItem("token", session.token);
+        window.location.replace("/");
+      } catch {
+        document.body.dataset.failed = "true";
+        status.textContent = "Could not open this session. Return to Playground and try again.";
+      }
+    })();
     return;
   }
 
@@ -77,8 +107,9 @@
         showNotice("Sign in to continue your conversation.");
         return;
       }
-      if (url.pathname === "/auth") {
-        if (booting && Date.now() - bootStarted < 12000) return;
+      if (url.pathname === "/auth" || url.pathname === startConversation) {
+        const failed = url.pathname === startConversation && frame.contentDocument?.body?.dataset.failed === "true";
+        if (booting && !failed && Date.now() - bootStarted < 20000) return;
         showNotice(booting
           ? "Your browser could not open sign-in here. Choose Continue, or open the full workspace."
           : "Sign in to continue your conversation.");
@@ -102,19 +133,37 @@
     status.textContent = "Opening your conversation…";
     booting = true;
     bootStarted = Date.now();
-    // Open WebUI's own auth page copies its cookie into its own browser storage.
-    // No custom token exchange and no credentials are exposed to the parent.
+    // Bootstrap only inside the cyth frame's own storage partition. The
+    // GitHub parent receives neither the response nor its credentials.
     frame.src = startConversation;
     clearInterval(monitor);
     monitor = setInterval(monitorConversation, 500);
+  }
+
+  function finishPopup() {
+    if (!popup || popup.closed || signInCompleted) return true;
+    try {
+      const returned = new URL(popup.location.href);
+      // Wait until Cognito's callback has finished. A full navigation avoids
+      // Svelte client routing and no shared redirectPath is needed.
+      if (returned.origin !== origin || !["/", "/auth", "/playground/login-complete"].includes(returned.pathname)) return false;
+      if (returned.pathname !== "/playground/login-complete") {
+        popup.location.replace(origin + "/playground/login-complete");
+      }
+      return true;
+    } catch {
+      return false; // The popup is still at Cognito; never inspect its content.
+    }
   }
 
   async function checkSession(afterSignIn = false) {
     if (checking || booting || !frame.hidden) return;
     checking = true;
     try {
+      const popupReturned = finishPopup();
       const code = await sessionStatus();
       if (code === 200) {
+        if (!popupReturned) return;
         openConversation();
       } else if (code === 401 || code === 403) {
         const completed = afterSignIn || signInCompleted;

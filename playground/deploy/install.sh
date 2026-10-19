@@ -7,7 +7,7 @@ if [[ ${EUID} -ne 0 ]]; then
 fi
 playground_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 install -d -o root -g root -m 0755 /var/www/cyth-playground /etc/nginx/snippets /etc/nginx/conf.d
-for asset in index.html embed.html sign-in.html login-complete.html webui.css embed.js; do
+for asset in index.html embed.html sign-in.html login-complete.html bootstrap.html webui.css embed.js; do
   install -o root -g root -m 0644 "$playground_dir/$asset" "/var/www/cyth-playground/$asset"
 done
 install -o root -g root -m 0644 "$playground_dir/deploy/origin-guard.conf" /etc/nginx/conf.d/cyth-embed-origin.conf

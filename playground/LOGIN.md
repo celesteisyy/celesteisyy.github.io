@@ -8,17 +8,23 @@ The GitHub page has no JavaScript and makes no direct authenticated API calls.
 
 ## Authentication and origins
 
-- Sign in opens `/playground/sign-in` in a new browser window. The helper sets
-  only Open WebUI's standard, fixed `redirectPath` value, then starts the
+- Sign in opens `/playground/sign-in` in a new browser window, then starts the
   existing `/oauth/oidc/login` flow. Open WebUI owns state, PKCE, Cognito claims,
   sessions and token validation. No shared service token is used.
-- After sign-in, `/playground/login-complete` verifies its session and sends
-  only `{type: "cyssie-signed-in"}` to the opener on the exact cyth origin.
-  The opener verifies both origin and window reference, then independently
-  checks its session. Tokens and chat content never pass through postMessage,
-  the GitHub parent, or URL parameters. A bounded poll also detects sign-in.
-- Open WebUI's own `/auth` page bootstraps its own storage from its own cookie.
-  The helper never reads credential values or the session response body.
+- The gate checks the session status and waits for the popup to return from
+  Cognito to cyth `/auth` or `/`. It then navigates the popup directly to the
+  fixed `/playground/login-complete` document, which closes after verification.
+  No global `redirectPath` marker or Svelte client route is used for this return.
+  Completion messages contain only `{type: "cyssie-signed-in"}` with exact origin
+  and window checks. A bounded poll also detects sign-in if the opener is lost.
+- Open WebUI v0.12.2 makes its auth cookie HttpOnly when `/api/v1/auths/` is
+  queried. Its native `/auth` page cannot read that cookie in a fresh storage
+  partition. The conversation frame therefore first loads the fixed cyth
+  `/playground/bootstrap` document. That document calls WebUI's own authenticated
+  session endpoint and writes its returned WebUI token to WebUI's own localStorage
+  in the frame's partition, then navigates to `/`. The cookie remains HttpOnly.
+  The outer gate reads only response statuses. Credentials and chat content
+  never pass through postMessage, the GitHub parent, or URL parameters.
 - Only auth cookies change to `SameSite=None; Secure` for cross-site embedding.
   The OAuth state/session cookie remains `SameSite=Lax; Secure`. Existing owner
   group restrictions remain enforced; password and OAuth registration stay off.

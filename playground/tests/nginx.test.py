@@ -17,7 +17,7 @@ class StaticRoutes(unittest.TestCase):
         cls.directory.chmod(0o755)
         static = cls.directory / "static"
         static.mkdir()
-        for name in ("index.html", "embed.html", "sign-in.html", "login-complete.html", "embed.js", "webui.css"):
+        for name in ("index.html", "embed.html", "sign-in.html", "login-complete.html", "bootstrap.html", "embed.js", "webui.css"):
             (static / name).write_text("fixture " + name)
         (static / "private.env").write_text("must not be served")
         snippet = (Path(__file__).parents[1] / "deploy/nginx.conf").read_text()
@@ -107,7 +107,8 @@ class StaticRoutes(unittest.TestCase):
         for route, name in (("/playground/embed/", "embed.html"),
                             ("/playground/embed.html", "embed.html"),
                             ("/playground/sign-in", "sign-in.html"),
-                            ("/playground/login-complete", "login-complete.html")):
+                            ("/playground/login-complete", "login-complete.html"),
+                            ("/playground/bootstrap", "bootstrap.html")):
             status, headers, body = self.get(route)
             self.assertEqual(status, 200)
             self.assertEqual(body, ("fixture " + name).encode())
