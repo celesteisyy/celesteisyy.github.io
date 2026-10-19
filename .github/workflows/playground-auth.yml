@@ -1,4 +1,4 @@
-name: Playground authentication
+name: Playground checks
 
 on:
   push:
@@ -18,13 +18,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
-      - run: node --check playground/app.js
-      - run: node --check playground/auth.js
-      - run: node --check playground/markdown.js
-      - run: node --test playground/tests/auth.test.cjs playground/tests/csp.test.cjs
-      - name: Browser security and login checks
+      - run: node --check playground/webui.js
+      - run: bash -n playground/deploy/install.sh
+      - run: node --test playground/tests/csp.test.cjs
+      - name: Workspace browser checks
         run: |
           npm install --prefix "$RUNNER_TEMP/cyssie-browser" --no-save --package-lock=false playwright@1.64.0
           "$RUNNER_TEMP/cyssie-browser/node_modules/.bin/playwright" install --with-deps chromium --only-shell
           NODE_PATH="$RUNNER_TEMP/cyssie-browser/node_modules" node --test playground/tests/browser.test.cjs
-

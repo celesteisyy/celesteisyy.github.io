@@ -1,78 +1,63 @@
-# Cyssie account login
+# Playground workspace
 
-The API's public `/auth/config` supplies Cognito settings. Login uses the
-vendored `oidc-client-ts` library and managed login with authorization code,
-PKCE S256, state, and nonce. The backend independently verifies the access
-token and permits only its configured owner. The browser sends the access
-token, never the ID token, in API requests.
+The public `/playground/` entry opens the workspace at
+`https://cyth.18-118-248-231.sslip.io/playground/`.
+The workspace keeps the site navigation and embeds Open WebUI on the **same
+origin**. Home, Blogs and LinkedIn retain their existing destinations.
 
-Set the SPA's callback **and sign-out** URL to
-`https://celesteisyy.github.io/playground/`, with `openid email` scopes.
-The library discovers the managed login domain from the pool's OIDC metadata.
-Backend configuration and deployment order are documented in the paired
-`cyssie-api` change's `deploy/COGNITO.md`.
+Open WebUI owns authentication, conversations, rendering, uploads and models.
+The wrapper does not read, copy or forward session tokens or old chat storage.
+Older browser-local chats are not imported or deleted. Cookies remain Secure
+and SameSite=Lax. Cognito authentication runs in the top-level window through
+`/auth?redirect=%2Fplayground%2F`, using Open WebUI's existing return-path flow.
+No Cognito client changes are required.
 
-Shared-token login and its entry field have been removed. A missing
-`/auth/config`, a legacy-mode response, and network/server failures all fail
-closed without enabling any alternative authentication mechanism.
+## Deploy before merging the entry-point change
 
-Cognito sessions are stored in the current tab's `sessionStorage`, with refresh
-before token expiry. They are not saved in `localStorage`. Conversations retain
-their existing browser-local storage behavior. Sign out clears the local
-session, attempts refresh-token revocation, and ends Cognito managed login.
-The backend's offline token verifier can accept an already-issued access token
-until expiry, so configure a short access-token lifetime.
+1. Check out this PR on EC2 (or the merged commit on later updates).
+2. Run `sudo bash playground/deploy/install.sh`. This installs three static
+   files and an Nginx snippet. It does not edit, reload or restart services.
+3. Back up `/etc/nginx/sites-available/cyth`. In its **existing HTTPS server
+   block**, add exactly one line:
 
-Callback code/state are removed from the URL, and the page sets
-`Referrer-Policy: no-referrer` via a meta tag. Authentication requests reject
-external API origins and redirects. Generated files use authenticated fetch
-and a temporary blob download, without tokens in links. PPTX uses
-`/downloads/presentations/`, Draw.io uses `/downloads/diagrams/`; old static
-links are translated to these endpoints. Deploy the paired backend update
-and restart the API before deploying this download update. Ordinary file,
-network and server errors keep the session and show a message in chat;
-authentication failure opens sign-in.
+   ```nginx
+   include /etc/nginx/snippets/cyth-playground.conf;
+   ```
 
-## Vendored dependencies
+   Retain existing IP restrictions, TLS configuration and proxy locations.
+   Do not add a second server or place the include in the HTTP redirect block.
+4. Check the upstream response headers:
 
-The signed-out dialog blocks the chat workspace while the sticky public banner
-remains available for Home, Blogs and LinkedIn navigation.
+   ```bash
+   curl -sSI http://127.0.0.1:3000/ | grep -Ei '^(HTTP/|x-frame-options:|content-security-policy:)'
+   ```
 
-Math uses locally vendored KaTeX 0.19.0 for dollar and backslash delimiters.
-Markdown is sanitized before parsed math is rendered with KaTeX's DOM API,
-with trust disabled, per-formula macros and bounded expansion, size and input.
-Invalid formulas fall back to text; code and escaped dollar signs stay literal.
-The existing CSP still rejects model-supplied scripts and inline styles.
-API-relative generated artifact links are resolved against the API for authenticated downloads.
+   Open WebUI must permit framing by its own origin: if configured, its
+   `XFRAME_OPTIONS` must be `SAMEORIGIN` and its CSP `frame-ancestors` must
+   include `'self'`. Do not remove other CSP directives or use a wildcard.
+   Change these only if the live headers require it; preserve both Compose
+   files and the existing data volume when recreating the container.
+5. Run `sudo nginx -t && sudo systemctl reload nginx`.
+6. Open `https://cyth.18-118-248-231.sslip.io/playground/`. Check signed-in chat,
+   sign-out/sign-in, navigation, one native tool call and mobile layout.
+   Authentication and WebUI API requests must stay on the same origin.
+7. Merge only after this deployed route works. GitHub Pages then updates the
+   old entry point without sending visitors to a route that is not ready.
 
-The exact npm distributions, hashes, versions, and licenses are in
-`vendor/manifest.json` and the adjacent license files. Serving OIDC, Markdown,
-and sanitization scripts locally avoids runtime script CDN dependencies. To
-update them, obtain the official npm package, retain its license and update
-the manifest hash, script reference, and tests together. No build step is
-required to serve this playground.
+The snippet serves only the three exact static asset paths. It does not expose
+the checkout, uploads, secrets, or other files under `/var/www`. The original
+API service and Open WebUI root continue to serve their existing routes.
+The existing owner-only access restriction still applies.
 
-## Verification
+## Update and rollback
 
-The page includes a hash-based CSP before all resources, and every script has
-matching Subresource Integrity. Inline scripts, event handlers, eval, frames,
-objects and forms cannot execute/load; connections are limited to the current
-API, user pool metadata path and exact managed-login domain. Markdown also
-rejects styles, active elements and named-property clobbering. After changing
-scripts or the API/pool/domain, run `node playground/scripts/update-csp.cjs`
-and the checks below. CI also exercises the policy in Chromium. GitHub Pages
-does not let this file set HTTP headers; a meta CSP cannot enforce
-`frame-ancestors`, and does not isolate other pages on the same origin.
-These measures reduce XSS risk; tokens remain JavaScript-accessible.
+Run the installer again from the selected commit and reload Nginx after its
+configuration test. Run `node playground/scripts/update-csp.cjs` whenever
+changing the wrapper script so SRI and CSP hashes stay in sync.
 
-```bash
-node --test playground/tests/auth.test.cjs playground/tests/csp.test.cjs
-```
+For rollback, restore the previous frontend commit. Remove the added Nginx
+include (or restore its backup), run `nginx -t`, then reload. The direct
+Open WebUI root continues to work; no data or volumes need deletion.
 
-Tests execute the real OIDC library against simulated TLS endpoints. They cover
-PKCE generation/exchange, callback cleanup, state/nonce rejection, backend
-authorization rejection, refresh, expiry, logout, origin restrictions, and
-rejection of obsolete shared-token configuration. Actual AWS settings and EC2/Nginx behavior still need
-deployment verification.
-
-
+Legacy script files are no longer loaded by the entry point. They remain in
+the repository for a separate cleanup; the wrapper never executes them.

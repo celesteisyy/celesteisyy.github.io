@@ -1,4 +1,4 @@
-// Run after editing a playground script or changing the Cognito/API endpoints.
+// Run after editing a playground script.
 const fs = require("node:fs");
 const path = require("node:path");
 const { createHash } = require("node:crypto");
@@ -19,8 +19,9 @@ const policy = [
   "script-src-attr 'none'",
   "style-src 'self'",
   "style-src-attr 'none'",
-  "connect-src https://18-118-248-231.sslip.io https://cognito-idp.us-east-2.amazonaws.com/us-east-2_0G8Lq71Sw/ https://us-east-20g8lq71sw.auth.us-east-2.amazoncognito.com",
-  "img-src 'self' blob:",
+  "connect-src 'self'",
+  "frame-src 'self'",
+  "img-src 'self'",
   "font-src 'self'",
   "object-src 'none'",
   "base-uri 'none'",
