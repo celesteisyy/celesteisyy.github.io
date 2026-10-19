@@ -2,102 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-9CTctQj9+T4BN6lwz86PMgfqLj837KX3VWpSh1aDYyo=' 'sha256-LJCptG1kY/JgOKKbaG6CvJHeAf2snVIp58/js2ATTqI=' 'sha256-EDpTdjzAM7uo0XW/Pwull8NQXJtnR90/LHvCpr/Miuc=' 'sha256-VhfOMhRaTFJNHcxaTgtUXUHT3AxUNzWwrvkC9N1uvPs=' 'sha256-+Znao4PwnrCQ0K4yIR6cqTHHaEDgjkf88zT8j1908e8=' 'sha256-tBmbkzhcWEKHQnifPy8n+ab9hiiOW1R1fRojL7Z+LpE=' 'sha256-Zbfd7MsY+4RUgrYmOkfdWBhWVUg42LNzNnm8bNw/IeQ='; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; connect-src https://18-118-248-231.sslip.io https://cognito-idp.us-east-2.amazonaws.com/us-east-2_0G8Lq71Sw/ https://us-east-20g8lq71sw.auth.us-east-2.amazoncognito.com; img-src 'self' blob:; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'none'; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; connect-src 'none'; frame-src https://cyth.18-118-248-231.sslip.io; img-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
   <meta name="referrer" content="no-referrer" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cyssie Playground</title>
-  <link rel="stylesheet" href="./vendor/katex-0.19.0/katex.min.css" />
-  <link rel="stylesheet" href="./style.css?v=20261008-2" />
+  <link rel="stylesheet" href="./webui.css?v=20261019-2" />
 </head>
-
 <body>
   <div class="nav-wrap">
-    <nav>
-      <a class="brand" href="/playground/">Cyssie</a>
-
+    <nav aria-label="Main navigation">
+      <a class="brand" href="https://celesteisyy.github.io/playground/">Cyssie</a>
       <div class="nav-links">
-        <a class="nav-link" href="/">Home</a>
-        <a class="nav-link" href="/blogs/">Blogs</a>
-        <a class="nav-link" href="https://www.linkedin.com/in/yueying-huang/" target="_blank" rel="noreferrer">LinkedIn</a>
+        <a class="nav-link" href="https://celesteisyy.github.io/">Home</a>
+        <a class="nav-link" href="https://celesteisyy.github.io/blogs/">Blogs</a>
+        <a class="nav-link" href="https://www.linkedin.com/in/yueying-huang/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
       </div>
     </nav>
   </div>
-
   <main class="container">
-    <section class="workspace">
-      <aside class="sidebar" id="sessionSidebar">
-        <div class="sidebar-head">
-          <span class="eyebrow">Tiny AI Agent</span>
-          <h1>Cyssie Playground</h1>
-          <p>A quiet workspace for asking, testing, and building with Cyssie.</p>
-        </div>
-
-        <div class="sidebar-actions">
-          <button class="primary-btn" id="newChatButton" type="button">New chat</button>
-          <button id="tokenButton" type="button">Sign in</button>
-        </div>
-
-        <div class="sessions" id="sessions"></div>
-
-        <div class="sidebar-foot">
-          Conversations are saved locally in this browser.
-        </div>
-      </aside>
-
-      <button
-        class="sidebar-toggle"
-        id="sidebarToggle"
-        type="button"
-        aria-controls="sessionSidebar"
-        aria-expanded="true"
-        aria-label="Hide sessions"
-        title="Hide sessions"
-      >
-        <span class="sidebar-toggle-icon" aria-hidden="true"></span>
-        <span class="sr-only">Hide sessions</span>
-      </button>
-
-      <section class="chat-shell">
-        <div class="chat-topbar">
-          <div class="topbar-start">
-            <div class="window-dots" aria-hidden="true">
-              <span></span><span></span><span></span>
-            </div>
-          </div>
-          <div class="chat-title" id="activeTitle">cyssie_session.md</div>
-          <div class="top-actions">
-            <button class="small-btn" id="clearChatButton" type="button">Clear</button>
-            <button class="small-btn" id="deleteChatButton" type="button">Delete</button>
-          </div>
-        </div>
-
-        <p id="downloadStatus" class="download-status" role="status" aria-live="polite" hidden></p>
-        <div id="chat"></div>
-
-        <form class="composer" id="chatForm">
-          <textarea id="messageInput" placeholder="Ask Cyssie..." rows="1"></textarea>
-          <button class="send-btn" id="sendButton" type="submit">Send</button>
-        </form>
-      </section>
+    <section class="workspace" aria-label="Cyssie workspace">
+      <iframe id="webui" src="https://cyth.18-118-248-231.sslip.io/playground/embed/" title="Cyssie conversation" referrerpolicy="no-referrer" allow="clipboard-write; microphone; fullscreen; storage-access"></iframe>
     </section>
+    <p class="workspace-footer"><a href="https://cyth.18-118-248-231.sslip.io/" target="_blank" rel="noopener noreferrer">Open full workspace ↗</a></p>
   </main>
-
-  <div class="token-modal" id="tokenModal" role="dialog" aria-labelledby="authTitle">
-    <div class="modal-card">
-      <h2 id="authTitle">Sign in</h2>
-      <p id="authDescription" role="status" aria-live="polite">Connecting to Cyssie…</p>
-      <button class="primary-btn" id="saveTokenButton" type="button" disabled>Connecting…</button>
-    </div>
-  </div>
-
-  <script src="vendor/marked-18.1.0.js" integrity="sha256-9CTctQj9+T4BN6lwz86PMgfqLj837KX3VWpSh1aDYyo=" crossorigin="anonymous"></script>
-  <script src="vendor/dompurify-3.4.16.js" integrity="sha256-LJCptG1kY/JgOKKbaG6CvJHeAf2snVIp58/js2ATTqI=" crossorigin="anonymous"></script>
-  <script src="vendor/katex-0.19.0/katex.min.js" integrity="sha256-EDpTdjzAM7uo0XW/Pwull8NQXJtnR90/LHvCpr/Miuc=" crossorigin="anonymous"></script>
-  <script src="markdown.js?v=20261008-1" integrity="sha256-VhfOMhRaTFJNHcxaTgtUXUHT3AxUNzWwrvkC9N1uvPs=" crossorigin="anonymous"></script>
-  <script src="vendor/oidc-client-ts-3.5.0.js" integrity="sha256-+Znao4PwnrCQ0K4yIR6cqTHHaEDgjkf88zT8j1908e8=" crossorigin="anonymous"></script>
-  <script src="auth.js?v=20261015-cognito-only" integrity="sha256-tBmbkzhcWEKHQnifPy8n+ab9hiiOW1R1fRojL7Z+LpE=" crossorigin="anonymous"></script>
-  <script src="app.js?v=20261015-cognito-only" integrity="sha256-Zbfd7MsY+4RUgrYmOkfdWBhWVUg42LNzNnm8bNw/IeQ=" crossorigin="anonymous"></script>
 </body>
 </html>
-
-

@@ -1,78 +1,120 @@
-# Cyssie account login
+# Embedded Playground
 
-The API's public `/auth/config` supplies Cognito settings. Login uses the
-vendored `oidc-client-ts` library and managed login with authorization code,
-PKCE S256, state, and nonce. The backend independently verifies the access
-token and permits only its configured owner. The browser sends the access
-token, never the ID token, in API requests.
+The public page stays at `https://celesteisyy.github.io/playground/` with the
+existing navigation. Its iframe opens a small sign-in helper on
+`https://cyth.18-118-248-231.sslip.io/playground/embed/`. The authenticated
+conversation inside that helper is Open WebUI, without a fork of its UI.
+The GitHub page has no JavaScript and makes no direct authenticated API calls.
 
-Set the SPA's callback **and sign-out** URL to
-`https://celesteisyy.github.io/playground/`, with `openid email` scopes.
-The library discovers the managed login domain from the pool's OIDC metadata.
-Backend configuration and deployment order are documented in the paired
-`cyssie-api` change's `deploy/COGNITO.md`.
+## Authentication and origins
 
-Shared-token login and its entry field have been removed. A missing
-`/auth/config`, a legacy-mode response, and network/server failures all fail
-closed without enabling any alternative authentication mechanism.
+- Sign in opens `/playground/sign-in` in a new browser window, then starts the
+  existing `/oauth/oidc/login` flow. Open WebUI owns state, PKCE, Cognito claims,
+  sessions and token validation. No shared service token is used.
+- The sign-in document sets a five-minute, non-secret, host-only marker scoped
+  to `/oauth/oidc/callback`. On that exact callback, Nginx rewrites only the
+  successful fixed `/auth` redirect to `/playground/login-complete`. The marker
+  is cleared there. Without the marker, ordinary WebUI login keeps `/auth`.
+  Error/MFA/pending redirects and all OAuth state, credentials and Set-Cookie
+  headers pass through unchanged. A forged marker grants no session or rights.
+- The completion document checks its native WebUI session, then closes itself.
+  It does not depend on the opener surviving Cognito navigation or on WebUI's
+  client routing. Completion messages contain only `{type: "cyssie-signed-in"}`
+  with exact origin and window checks. A bounded poll detects the authenticated
+  embedded session even if the browser isolates the popup from its opener.
+- Open WebUI v0.12.2 makes its auth cookie HttpOnly when `/api/v1/auths/` is
+  queried. Its native `/auth` page cannot read that cookie in a fresh storage
+  partition. The conversation frame therefore first loads the fixed cyth
+  `/playground/bootstrap` document. That document calls WebUI's own authenticated
+  session endpoint and writes its returned WebUI token to WebUI's own localStorage
+  in the frame's partition, then navigates to `/`. The cookie remains HttpOnly.
+  The outer gate reads only response statuses. Credentials and chat content
+  never pass through postMessage, the GitHub parent, or URL parameters.
+- Only auth cookies change to `SameSite=None; Secure` for cross-site embedding.
+  The OAuth state/session cookie remains `SameSite=Lax; Secure`. Existing owner
+  group restrictions remain enforced; password and OAuth registration stay off.
+- Because cross-site cookies need explicit CSRF protection, the Nginx origin
+  guard rejects every non-GET/HEAD/OPTIONS request and every Upgrade request
+  unless `Origin` is exactly the cyth origin. Missing, null and foreign origins
+  are rejected, including requests with an Authorization header. The application
+  still authenticates every protected operation. Native external API clients
+  making writes must provide this Origin as well as valid authentication.
+- Every frame ancestor must be cyth itself or `https://celesteisyy.github.io`.
+  CORS remains limited to the cyth origin: the GitHub parent does not need API
+  access. No wildcard embedding, CORS, or origin rules are introduced.
+- A browser that blocks embedded cookie/storage access may require the user to
+  click Continue and grant storage access. Managed browser policies can refuse
+  it. The UI then offers the full workspace; it never treats an inaccessible
+  session as authenticated or disables authentication to make embedding work.
 
-Cognito sessions are stored in the current tab's `sessionStorage`, with refresh
-before token expiry. They are not saved in `localStorage`. Conversations retain
-their existing browser-local storage behavior. Sign out clears the local
-session, attempts refresh-token revocation, and ends Cognito managed login.
-The backend's offline token verifier can accept an already-issued access token
-until expiry, so configure a short access-token lifetime.
+## Deploy before merging the GitHub entry
 
-Callback code/state are removed from the URL, and the page sets
-`Referrer-Policy: no-referrer` via a meta tag. Authentication requests reject
-external API origins and redirects. Generated files use authenticated fetch
-and a temporary blob download, without tokens in links. PPTX uses
-`/downloads/presentations/`, Draw.io uses `/downloads/diagrams/`; old static
-links are translated to these endpoints. Deploy the paired backend update
-and restart the API before deploying this download update. Ordinary file,
-network and server errors keep the session and show a message in chat;
-authentication failure opens sign-in.
+1. On EC2, update this branch and run:
 
-## Vendored dependencies
+   ```bash
+   cd ~/cyssie-site
+   git pull --ff-only
+   sudo bash playground/deploy/install.sh
+   sudo nginx -t && sudo systemctl reload nginx
+   ```
 
-The signed-out dialog blocks the chat workspace while the sticky public banner
-remains available for Home, Blogs and LinkedIn navigation.
+   Keep exactly one `include /etc/nginx/snippets/cyth-playground.conf;` in the
+   existing cyth HTTPS server. The installer puts the maps under Nginx's
+   standard http-level `/etc/nginx/conf.d/` include. Retain TLS, proxy locations
+   and existing authentication. The existing WebUI proxy must inherit the
+   snippet's `proxy_redirect` (do not override it with `proxy_redirect off`).
+   Remove a deployment-only IP allowlist only
+   after the owner-only authentication settings have been verified.
+2. Verify the guard **before enabling cross-site cookies**. These anonymous
+   writes must return 403:
 
-Math uses locally vendored KaTeX 0.19.0 for dollar and backslash delimiters.
-Markdown is sanitized before parsed math is rendered with KaTeX's DOM API,
-with trust disabled, per-formula macros and bounded expansion, size and input.
-Invalid formulas fall back to text; code and escaped dollar signs stay literal.
-The existing CSP still rejects model-supplied scripts and inline styles.
-API-relative generated artifact links are resolved against the API for authenticated downloads.
+   ```bash
+   curl -s -o /dev/null -w '%{http_code}\n' -X POST \
+     -H 'Origin: https://evil.example' \
+     https://cyth.18-118-248-231.sslip.io/api/v1/auths/signout
+   curl -s -o /dev/null -w '%{http_code}\n' -X POST \
+     https://cyth.18-118-248-231.sslip.io/api/v1/auths/signout
+   ```
+3. Add the embed overlay **after both existing Compose files**:
 
-The exact npm distributions, hashes, versions, and licenses are in
-`vendor/manifest.json` and the adjacent license files. Serving OIDC, Markdown,
-and sanitization scripts locally avoids runtime script CDN dependencies. To
-update them, obtain the official npm package, retain its license and update
-the manifest hash, script reference, and tests together. No build step is
-required to serve this playground.
+   ```bash
+   cd ~/cyssie-api/deploy/open-webui
+   sudo docker compose --env-file .env \
+     -f compose.yaml -f compose.small.yaml \
+     -f ~/cyssie-site/playground/deploy/compose.embed.yaml \
+     up -d --force-recreate
+   ```
 
-## Verification
+   Retain this third file on future recreations. It preserves the slim image,
+   memory limits, existing project/volume, Cognito secrets and model settings.
+   Existing cookies may still have Lax attributes: the helper's popup initiates
+   a fresh Cognito flow so the callback issues the updated auth cookies.
+4. Open `https://cyth.18-118-248-231.sslip.io/playground/` to check the deployed
+   documents, then verify the exact GitHub iframe context before cutover. The
+   real cross-site context matters; a same-origin preview alone is insufficient.
+   Once EC2 deployment is ready, merge the GitHub entry and verify in the actual
+   browser: sign in through the popup, chat, invoke a native tool, sign out,
+   reload and use mobile navigation. Repeat with embedded cookies blocked to
+   confirm the permission/fallback message. No Cognito callback changes needed.
+5. Without cookies, `/playground/` and `/playground/embed/` return 200 while
+   `/api/v1/auths/` and `/api/models` return 401 or 403. Inspect response headers
+   to confirm the exact frame-ancestors list and `SameSite=None; Secure` auth
+   cookies after signing in. Never paste those cookie values into an issue.
 
-The page includes a hash-based CSP before all resources, and every script has
-matching Subresource Integrity. Inline scripts, event handlers, eval, frames,
-objects and forms cannot execute/load; connections are limited to the current
-API, user pool metadata path and exact managed-login domain. Markdown also
-rejects styles, active elements and named-property clobbering. After changing
-scripts or the API/pool/domain, run `node playground/scripts/update-csp.cjs`
-and the checks below. CI also exercises the policy in Chromium. GitHub Pages
-does not let this file set HTTP headers; a meta CSP cannot enforce
-`frame-ancestors`, and does not isolate other pages on the same origin.
-These measures reduce XSS risk; tokens remain JavaScript-accessible.
+Only the named public static documents/assets are served by Nginx. The checkout,
+secrets, uploads and arbitrary `/var/www` files are not published. The backend
+API service and native tool service keep their loopback listeners and Cognito
+authentication. Old browser-local chats are not imported or deleted.
 
-```bash
-node --test playground/tests/auth.test.cjs playground/tests/csp.test.cjs
-```
+## Updating and rollback
 
-Tests execute the real OIDC library against simulated TLS endpoints. They cover
-PKCE generation/exchange, callback cleanup, state/nonce rejection, backend
-authorization rejection, refresh, expiry, logout, origin restrictions, and
-rejection of obsolete shared-token configuration. Actual AWS settings and EC2/Nginx behavior still need
-deployment verification.
+Run `node playground/scripts/update-csp.cjs` after script changes to refresh all
+CSP/SRI hashes. The CI runs browser sign-in/embedding tests and actual Nginx
+routing, unsafe-method and WebSocket origin checks.
 
-
+For rollback, revert the frontend entry first. Recreate WebUI with the original
+**two** Compose files to restore Lax auth cookies, then sign out/in to replace
+existing None cookies. Only after those cookies are no longer active should the
+origin guard be removed. Alternatively keep the guard as an additional control.
+No data or volumes need deletion. Restore a saved Nginx configuration if needed,
+run `nginx -t`, then reload. The direct Open WebUI root remains available.
