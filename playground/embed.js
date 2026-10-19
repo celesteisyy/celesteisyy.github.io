@@ -110,7 +110,7 @@
       const url = new URL(frame.contentWindow.location.href);
       if (url.protocol !== "https:") return;
       if (url.origin !== origin || url.pathname.startsWith("/oauth/")) {
-        showNotice("Sign in to continue your conversation.");
+        showNotice("Sign in to wake Cyssie.");
         return;
       }
       if (url.pathname === "/auth" || url.pathname === startConversation) {
@@ -118,7 +118,7 @@
         if (booting && !failed && Date.now() - bootStarted < 20000) return;
         showNotice(booting
           ? "Your browser could not open sign-in here. Choose Continue, or open the full workspace."
-          : "Sign in to continue your conversation.");
+          : "Sign in to wake Cyssie.");
         retry.hidden = false;
         full.hidden = false;
         return;
@@ -127,7 +127,7 @@
       notice.hidden = true;
       frame.hidden = false;
     } catch {
-      showNotice("Sign in to continue your conversation.");
+      showNotice("Sign in to wake Cyssie.");
     }
   }
 
@@ -157,7 +157,7 @@
         const completed = afterSignIn || signInCompleted || !!popup?.closed;
         status.textContent = completed
           ? "Finish signing in, then choose Continue. Your browser may ask to allow sign-in here."
-          : "Sign in to open your workspace.";
+          : "Sign in to wake Cyssie.";
         login.hidden = false;
         if (completed) { retry.hidden = false; full.hidden = false; }
       } else {
