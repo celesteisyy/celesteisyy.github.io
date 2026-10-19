@@ -11,12 +11,17 @@ The GitHub page has no JavaScript and makes no direct authenticated API calls.
 - Sign in opens `/playground/sign-in` in a new browser window, then starts the
   existing `/oauth/oidc/login` flow. Open WebUI owns state, PKCE, Cognito claims,
   sessions and token validation. No shared service token is used.
-- The gate checks the session status and waits for the popup to return from
-  Cognito to cyth `/auth` or `/`. It then navigates the popup directly to the
-  fixed `/playground/login-complete` document, which closes after verification.
-  No global `redirectPath` marker or Svelte client route is used for this return.
-  Completion messages contain only `{type: "cyssie-signed-in"}` with exact origin
-  and window checks. A bounded poll also detects sign-in if the opener is lost.
+- The sign-in document sets a five-minute, non-secret, host-only marker scoped
+  to `/oauth/oidc/callback`. On that exact callback, Nginx rewrites only the
+  successful fixed `/auth` redirect to `/playground/login-complete`. The marker
+  is cleared there. Without the marker, ordinary WebUI login keeps `/auth`.
+  Error/MFA/pending redirects and all OAuth state, credentials and Set-Cookie
+  headers pass through unchanged. A forged marker grants no session or rights.
+- The completion document checks its native WebUI session, then closes itself.
+  It does not depend on the opener surviving Cognito navigation or on WebUI's
+  client routing. Completion messages contain only `{type: "cyssie-signed-in"}`
+  with exact origin and window checks. A bounded poll detects the authenticated
+  embedded session even if the browser isolates the popup from its opener.
 - Open WebUI v0.12.2 makes its auth cookie HttpOnly when `/api/v1/auths/` is
   queried. Its native `/auth` page cannot read that cookie in a fresh storage
   partition. The conversation frame therefore first loads the fixed cyth
@@ -56,7 +61,9 @@ The GitHub page has no JavaScript and makes no direct authenticated API calls.
    Keep exactly one `include /etc/nginx/snippets/cyth-playground.conf;` in the
    existing cyth HTTPS server. The installer puts the maps under Nginx's
    standard http-level `/etc/nginx/conf.d/` include. Retain TLS, proxy locations
-   and existing authentication. Remove a deployment-only IP allowlist only
+   and existing authentication. The existing WebUI proxy must inherit the
+   snippet's `proxy_redirect` (do not override it with `proxy_redirect off`).
+   Remove a deployment-only IP allowlist only
    after the owner-only authentication settings have been verified.
 2. Verify the guard **before enabling cross-site cookies**. These anonymous
    writes must return 403:

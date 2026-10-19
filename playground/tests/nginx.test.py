@@ -1,12 +1,28 @@
 """Exercise the installed static routes with a real Nginx process."""
 import http.client
+import http.server
 import shutil
 import socket
 import subprocess
 import tempfile
 import time
+import threading
 import unittest
 from pathlib import Path
+
+
+WEBUI = "https://cyth.18-118-248-231.sslip.io"
+
+
+class RedirectUpstream(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(307)
+        self.send_header("Location", self.headers.get("X-Fixture-Location", WEBUI + "/auth"))
+        self.send_header("Set-Cookie", "token=upstream-fixture; Path=/; Secure; HttpOnly; SameSite=None")
+        self.end_headers()
+
+    def log_message(self, *_args):
+        pass
 
 
 class StaticRoutes(unittest.TestCase):
@@ -26,6 +42,10 @@ class StaticRoutes(unittest.TestCase):
         with socket.socket() as listener:
             listener.bind(("127.0.0.1", 0))
             cls.port = listener.getsockname()[1]
+        cls.upstream = http.server.ThreadingHTTPServer(("127.0.0.1", 0), RedirectUpstream)
+        cls.upstream_thread = threading.Thread(target=cls.upstream.serve_forever, daemon=True)
+        cls.upstream_thread.start()
+        upstream_port = cls.upstream.server_port
         config = cls.directory / "nginx.conf"
         config.write_text(
             "pid " + str(cls.directory / "nginx.pid") + ";\n"
@@ -35,7 +55,10 @@ class StaticRoutes(unittest.TestCase):
                       ("client_body", "proxy", "fastcgi", "uwsgi", "scgi"))
             + guard + "\nserver {\n"
             f"listen 127.0.0.1:{cls.port};\n"
-            + snippet + "\nlocation / { return 418; }\n} }\n"
+            + snippet + "\nlocation / { return 418; }\n"
+            + f"location = /oauth/oidc/callback {{ proxy_pass http://127.0.0.1:{upstream_port}; }}\n"
+            + f"location = /unrelated-proxy {{ proxy_pass http://127.0.0.1:{upstream_port}; }}\n"
+            + "} }\n"
         )
         cls.process = subprocess.Popen(
             [shutil.which("nginx") or "nginx", "-p", str(cls.directory), "-c", str(config),
@@ -56,6 +79,9 @@ class StaticRoutes(unittest.TestCase):
     def tearDownClass(cls):
         cls.process.terminate()
         cls.process.communicate(timeout=5)
+        cls.upstream.shutdown()
+        cls.upstream.server_close()
+        cls.upstream_thread.join(timeout=5)
         cls.temp.cleanup()
 
     @classmethod
@@ -96,7 +122,7 @@ class StaticRoutes(unittest.TestCase):
 
     def test_other_files_and_existing_api_routes_are_not_captured(self):
         for path in ("/playground/private.env", "/playground/nested/index.html",
-                     "/api/v1/auths/", "/api/models", "/oauth/oidc/callback", "/"):
+                     "/api/v1/auths/", "/api/models", "/"):
             with self.subTest(path=path):
                 status, _, body = self.get(path)
                 self.assertEqual(status, 418)
@@ -114,6 +140,29 @@ class StaticRoutes(unittest.TestCase):
             self.assertEqual(body, ("fixture " + name).encode())
             self.assertEqual(headers["Content-Security-Policy"],
                              "frame-ancestors 'self' https://celesteisyy.github.io")
+
+    def test_popup_callback_rewrites_only_the_fixed_success_redirect(self):
+        callback = "/oauth/oidc/callback?code=fixture-code&state=fixture-state"
+        for marker in (None, "cyth_embed_login=0", "cyth_embed_login=1x", "unrelated=1"):
+            status, headers, _ = self.get(callback, headers={"Cookie": marker} if marker else {})
+            self.assertEqual(status, 307)
+            self.assertEqual(headers["Location"], WEBUI + "/auth")
+        status, headers, _ = self.get(callback, headers={"Cookie": "cyth_embed_login=1"})
+        self.assertEqual(status, 307)
+        self.assertEqual(headers["Location"], WEBUI + "/playground/login-complete")
+        self.assertEqual(headers["Set-Cookie"],
+                         "token=upstream-fixture; Path=/; Secure; HttpOnly; SameSite=None")
+
+    def test_popup_marker_preserves_errors_mfa_and_unrelated_locations(self):
+        for target in (WEBUI + "/auth?error=fixture-error", WEBUI + "/auth?mfa=1",
+                       WEBUI + "/auth?pending=1", WEBUI + "/auth/", "https://evil.example/auth"):
+            status, headers, _ = self.get("/oauth/oidc/callback", headers={
+                "Cookie": "cyth_embed_login=1", "X-Fixture-Location": target})
+            self.assertEqual(status, 307)
+            self.assertEqual(headers["Location"], target)
+        status, headers, _ = self.get("/unrelated-proxy", headers={"Cookie": "cyth_embed_login=1"})
+        self.assertEqual(status, 307)
+        self.assertEqual(headers["Location"], WEBUI + "/auth")
 
     def test_browser_writes_require_the_exact_webui_origin(self):
         for method in ("POST", "PUT", "PATCH", "DELETE"):
