@@ -11,7 +11,7 @@ const PLAYGROUND = WEBUI + "/playground/";
 async function mount(t, options = {}) {
   const browser = await chromium.launch({ headless: true });
   t.after(() => browser.close());
-  const context = await browser.newContext({ viewport: { width: 1280, height: 850 } });
+  const context = await browser.newContext({ serviceWorkers: "block", viewport: { width: 1280, height: 850 } });
   const page = await context.newPage();
   const calls = [], errors = [];
   const state = { authenticated: options.authenticated !== false, status: options.status, expireInFrame: false };
@@ -33,7 +33,7 @@ async function mount(t, options = {}) {
       return route.fulfill({ status: state.status || (authenticated ? 200 : 401), contentType: "application/json", body: JSON.stringify(authenticated ? { id: "owner" } : { detail: "Unauthorized" }) });
     }
     if (url.origin === WEBUI && url.pathname === "/") {
-      if (state.expireInFrame) return route.fulfill({ status: 302, headers: { location: "/auth" } });
+      if (state.expireInFrame) return route.fulfill({ contentType: "text/html", body: '<script>location.replace("/auth")</script>' });
       return route.fulfill({ headers: { "x-frame-options": "SAMEORIGIN", "content-security-policy": "frame-ancestors 'self'" }, contentType: "text/html", body: "<h1>Open WebUI fixture</h1><button>New chat</button>" });
     }
     if (url.origin === WEBUI && url.pathname === "/auth") {
