@@ -29,7 +29,10 @@ class StaticRoutes(unittest.TestCase):
         config.write_text(
             "pid " + str(cls.directory / "nginx.pid") + ";\n"
             "error_log " + str(cls.directory / "error.log") + " notice;\n"
-            "events {}\nhttp { access_log off; server {\n"
+            "events {}\nhttp { access_log off;\n"
+            + "".join(f"{kind}_temp_path {cls.directory / kind};\n" for kind in
+                      ("client_body", "proxy", "fastcgi", "uwsgi", "scgi"))
+            + "server {\n"
             f"listen 127.0.0.1:{cls.port};\n"
             + snippet + "\nlocation / { return 418; }\n} }\n"
         )
