@@ -24,7 +24,11 @@ No Cognito client changes are required.
    include /etc/nginx/snippets/cyth-playground.conf;
    ```
 
-   Retain existing IP restrictions, TLS configuration and proxy locations.
+   Retain TLS configuration and proxy locations. Keep temporary bootstrap IP
+   restrictions until the owner-only OAuth configuration is verified. For
+   access from changing networks, remove only the bootstrap allow/deny pair
+   from this host after confirming authentication and both signup settings.
+   Visitors may then open the shell and login page; chat remains authenticated.
    Do not add a second server or place the include in the HTTP redirect block.
 4. Check the upstream response headers:
 
@@ -47,7 +51,9 @@ No Cognito client changes are required.
 The snippet serves only the three exact static asset paths. It does not expose
 the checkout, uploads, secrets, or other files under `/var/www`. The original
 API service and Open WebUI root continue to serve their existing routes.
-The existing owner-only access restriction still applies.
+The existing owner-only authentication policy still applies. Verify without
+cookies that `/playground/` returns 200 while `/api/v1/auths/` and `/api/models`
+return 401 or 403. Check an incognito browser and an authenticated owner session.
 
 ## Update and rollback
 

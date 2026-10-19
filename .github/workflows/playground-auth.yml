@@ -21,6 +21,11 @@ jobs:
       - run: node --check playground/webui.js
       - run: bash -n playground/deploy/install.sh
       - run: node --test playground/tests/csp.test.cjs
+      - name: Nginx static route checks
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends nginx
+          python3 playground/tests/nginx.test.py
       - name: Workspace browser checks
         run: |
           npm install --prefix "$RUNNER_TEMP/cyssie-browser" --no-save --package-lock=false playwright@1.64.0
