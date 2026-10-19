@@ -17,11 +17,12 @@ class StaticRoutes(unittest.TestCase):
         cls.directory.chmod(0o755)
         static = cls.directory / "static"
         static.mkdir()
-        for name in ("index.html", "webui.js", "webui.css"):
+        for name in ("index.html", "embed.html", "sign-in.html", "login-complete.html", "embed.js", "webui.css"):
             (static / name).write_text("fixture " + name)
         (static / "private.env").write_text("must not be served")
         snippet = (Path(__file__).parents[1] / "deploy/nginx.conf").read_text()
         snippet = snippet.replace("/var/www/cyth-playground", str(static))
+        guard = (Path(__file__).parents[1] / "deploy/origin-guard.conf").read_text()
         with socket.socket() as listener:
             listener.bind(("127.0.0.1", 0))
             cls.port = listener.getsockname()[1]
@@ -32,7 +33,7 @@ class StaticRoutes(unittest.TestCase):
             "events {}\nhttp { access_log off;\n"
             + "".join(f"{kind}_temp_path {cls.directory / kind};\n" for kind in
                       ("client_body", "proxy", "fastcgi", "uwsgi", "scgi"))
-            + "server {\n"
+            + guard + "\nserver {\n"
             f"listen 127.0.0.1:{cls.port};\n"
             + snippet + "\nlocation / { return 418; }\n} }\n"
         )
@@ -58,10 +59,10 @@ class StaticRoutes(unittest.TestCase):
         cls.temp.cleanup()
 
     @classmethod
-    def get(cls, path, method="GET"):
+    def get(cls, path, method="GET", headers=None):
         connection = http.client.HTTPConnection("127.0.0.1", cls.port, timeout=3)
         try:
-            connection.request(method, path)
+            connection.request(method, path, headers=headers or {})
             response = connection.getresponse()
             return response.status, dict(response.getheaders()), response.read()
         finally:
@@ -75,14 +76,14 @@ class StaticRoutes(unittest.TestCase):
                 self.assertEqual(body, b"fixture index.html")
                 self.assertEqual(headers["Content-Type"], "text/html")
                 self.assertEqual(headers["Cache-Control"], "no-store")
-                self.assertEqual(headers["X-Frame-Options"], "DENY")
-                self.assertEqual(headers["Content-Security-Policy"], "frame-ancestors 'none'")
+                self.assertNotIn("X-Frame-Options", headers)
+                self.assertEqual(headers["Content-Security-Policy"], "frame-ancestors 'self' https://celesteisyy.github.io")
         status, _, body = self.get("/playground/", "HEAD")
         self.assertEqual(status, 200)
         self.assertEqual(body, b"")
 
     def test_assets_are_exact_and_have_explicit_types(self):
-        for name, mime in (("webui.js", "application/javascript"), ("webui.css", "text/css")):
+        for name, mime in (("embed.js", "application/javascript"), ("webui.css", "text/css")):
             status, headers, body = self.get("/playground/" + name + "?v=test")
             self.assertEqual(status, 200)
             self.assertEqual(headers["Content-Type"], mime)
@@ -100,6 +101,39 @@ class StaticRoutes(unittest.TestCase):
                 status, _, body = self.get(path)
                 self.assertEqual(status, 418)
                 self.assertNotIn(b"must not be served", body)
+
+
+    def test_embed_and_login_documents_are_explicit_static_routes(self):
+        for route, name in (("/playground/embed/", "embed.html"),
+                            ("/playground/embed.html", "embed.html"),
+                            ("/playground/sign-in", "sign-in.html"),
+                            ("/playground/login-complete", "login-complete.html")):
+            status, headers, body = self.get(route)
+            self.assertEqual(status, 200)
+            self.assertEqual(body, ("fixture " + name).encode())
+            self.assertEqual(headers["Content-Security-Policy"],
+                             "frame-ancestors 'self' https://celesteisyy.github.io")
+
+    def test_browser_writes_require_the_exact_webui_origin(self):
+        for method in ("POST", "PUT", "PATCH", "DELETE"):
+            for origin in (None, "null", "https://evil.example",
+                           "https://celesteisyy.github.io",
+                           "https://cyth.18-118-248-231.sslip.io.evil.example"):
+                headers = {"Origin": origin} if origin else {}
+                headers["Cookie"] = "token=fixture"
+                with self.subTest(method=method, origin=origin):
+                    self.assertEqual(self.get("/api/tool-fixture", method, headers)[0], 403)
+            self.assertEqual(self.get("/api/tool-fixture", method,
+                {"Origin": "https://cyth.18-118-248-231.sslip.io"})[0], 418)
+
+    def test_websocket_upgrades_require_the_exact_webui_origin(self):
+        for origin in (None, "null", "https://evil.example", "https://celesteisyy.github.io"):
+            headers = {"Upgrade": "websocket", "Connection": "Upgrade"}
+            if origin: headers["Origin"] = origin
+            self.assertEqual(self.get("/ws/socket.io/", headers=headers)[0], 403)
+        self.assertEqual(self.get("/ws/socket.io/", headers={
+            "Upgrade": "websocket", "Connection": "Upgrade",
+            "Origin": "https://cyth.18-118-248-231.sslip.io"})[0], 418)
 
 
 if __name__ == "__main__":

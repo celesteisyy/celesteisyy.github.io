@@ -2,16 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-edTtbaxKCqGGWXh1sQtwL4BSiIon7UItWaYt5iO3THs='; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; connect-src 'self'; frame-src 'self'; img-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'none'; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; connect-src 'none'; frame-src https://cyth.18-118-248-231.sslip.io; img-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
   <meta name="referrer" content="no-referrer" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cyssie Playground</title>
-  <link rel="stylesheet" href="./webui.css?v=20261019-1" />
+  <link rel="stylesheet" href="./webui.css?v=20261019-2" />
 </head>
 <body>
   <div class="nav-wrap">
     <nav aria-label="Main navigation">
-      <a class="brand" href="https://cyth.18-118-248-231.sslip.io/playground/">Cyssie</a>
+      <a class="brand" href="https://celesteisyy.github.io/playground/">Cyssie</a>
       <div class="nav-links">
         <a class="nav-link" href="https://celesteisyy.github.io/">Home</a>
         <a class="nav-link" href="https://celesteisyy.github.io/blogs/">Blogs</a>
@@ -21,22 +21,9 @@
   </div>
   <main class="container">
     <section class="workspace" aria-label="Cyssie workspace">
-      <div class="notice" id="workspaceNotice">
-        <h1>Cyssie Playground</h1>
-        <p id="workspaceStatus" role="status" aria-live="polite">Opening your workspace…</p>
-        <div class="notice-actions">
-          <a class="nav-link" id="signInLink" href="https://cyth.18-118-248-231.sslip.io/auth?redirect=%2Fplayground%2F" hidden>Sign in</a>
-          <button id="retryButton" type="button" disabled>Try again</button>
-          <a class="nav-link" href="https://celesteisyy.github.io/">Back to home</a>
-        </div>
-        <noscript><p>Enable JavaScript to sign in and chat.</p></noscript>
-      </div>
-      <iframe id="webui" title="Cyssie conversation" referrerpolicy="no-referrer" allow="clipboard-write; microphone; fullscreen" hidden></iframe>
+      <iframe id="webui" src="https://cyth.18-118-248-231.sslip.io/playground/embed/" title="Cyssie conversation" referrerpolicy="no-referrer" allow="clipboard-write; microphone; fullscreen; storage-access"></iframe>
     </section>
     <p class="workspace-footer"><a href="https://cyth.18-118-248-231.sslip.io/" target="_blank" rel="noopener noreferrer">Open full workspace ↗</a></p>
   </main>
-  <script src="webui.js?v=20261019-1" integrity="sha256-edTtbaxKCqGGWXh1sQtwL4BSiIon7UItWaYt5iO3THs=" crossorigin="anonymous"></script>
 </body>
 </html>
-
-
