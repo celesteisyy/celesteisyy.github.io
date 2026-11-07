@@ -21,6 +21,9 @@
       // Remove the old helper's shared marker. Popup and frame must not race
       // over Open WebUI's global post-login return path.
       localStorage.removeItem("redirectPath");
+      // This short-lived, non-secret marker chooses only a fixed return page.
+      // Cognito state and every credential are still managed by Open WebUI.
+      document.cookie = "cyth_embed_login=1; Path=/oauth/oidc/callback; Max-Age=300; Secure; SameSite=Lax";
       window.location.replace("/oauth/oidc/login");
     } catch {
       status.textContent = "Could not start sign-in. Please open the full workspace.";
@@ -29,14 +32,17 @@
   }
 
   if (document.body.dataset.mode === "complete") {
+    document.cookie = "cyth_embed_login=; Path=/oauth/oidc/callback; Max-Age=0; Secure; SameSite=Lax";
     sessionStatus().then(code => {
       if (code !== 200) {
         status.textContent = "Sign-in could not be confirmed. Please return and try again.";
         return;
       }
       status.textContent = "Signed in. You can return to Playground.";
-      if (window.opener) {
-        window.opener.postMessage({ type: "cyssie-signed-in" }, origin);
+      try {
+        if (window.opener) window.opener.postMessage({ type: "cyssie-signed-in" }, origin);
+      } catch {
+        // The opener can be isolated or already closed. The gate also polls.
       }
       window.close();
     }).catch(() => {
@@ -140,33 +146,15 @@
     monitor = setInterval(monitorConversation, 500);
   }
 
-  function finishPopup() {
-    if (!popup || popup.closed || signInCompleted) return true;
-    try {
-      const returned = new URL(popup.location.href);
-      // Wait until Cognito's callback has finished. A full navigation avoids
-      // Svelte client routing and no shared redirectPath is needed.
-      if (returned.origin !== origin || !["/", "/auth", "/playground/login-complete"].includes(returned.pathname)) return false;
-      if (returned.pathname !== "/playground/login-complete") {
-        popup.location.replace(origin + "/playground/login-complete");
-      }
-      return true;
-    } catch {
-      return false; // The popup is still at Cognito; never inspect its content.
-    }
-  }
-
   async function checkSession(afterSignIn = false) {
     if (checking || booting || !frame.hidden) return;
     checking = true;
     try {
-      const popupReturned = finishPopup();
       const code = await sessionStatus();
       if (code === 200) {
-        if (!popupReturned) return;
         openConversation();
       } else if (code === 401 || code === 403) {
-        const completed = afterSignIn || signInCompleted;
+        const completed = afterSignIn || signInCompleted || !!popup?.closed;
         status.textContent = completed
           ? "Finish signing in, then choose Continue. Your browser may ask to allow sign-in here."
           : "Sign in to open your workspace.";

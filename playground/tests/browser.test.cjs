@@ -16,7 +16,7 @@ async function mount(t, options = {}) {
   const context = await browser.newContext({ serviceWorkers: "block", viewport: { width: 1280, height: 850 } });
   const page = await context.newPage();
   const calls = [], errors = [];
-  const state = { blocked: false, status: null, toolCalls: 0 };
+  const state = { blocked: false, status: null, toolCalls: 0, completionWithoutOpener: false };
   context.on("page", p => p.on("pageerror", e => errors.push(e.message)));
   page.on("pageerror", e => errors.push(e.message));
   async function setSession(sameSite = "None", httpOnly = true) {
@@ -25,6 +25,10 @@ async function mount(t, options = {}) {
       { name: "oauth_session_id", value: "server-session", url: WEBUI, secure: true, httpOnly: true, sameSite },
     ]);
   }
+  await context.exposeBinding("recordCompletion", (_source, missing) => { state.completionWithoutOpener = missing; });
+  await context.addInitScript(() => {
+    if (location.pathname === "/playground/login-complete") window.recordCompletion(window.opener === null);
+  });
   if (options.authenticated) await setSession(options.sameSite);
   await context.route("**/*", async route => {
     const request = route.request();
@@ -33,7 +37,7 @@ async function mount(t, options = {}) {
     calls.push({ url: request.url(), headers, method: request.method() });
     const embedded = !request.isNavigationRequest() && request.frame().page() === page && new URL(page.url()).origin === SITE;
     const session = (!state.blocked || !embedded) && headers.cookie?.includes("token=owner-fixture");
-    const html = body => route.fulfill({ contentType: "text/html", headers: { "content-security-policy": FRAME_CSP }, body });
+    const html = (body, extraHeaders = {}) => route.fulfill({ contentType: "text/html", headers: { "content-security-policy": FRAME_CSP, ...extraHeaders }, body });
     if ([WEBUI, SITE].includes(url.origin) && url.pathname.startsWith("/playground/")) {
       const aliases = { "/playground/": "index.html", "/playground/embed/": "embed.html", "/playground/sign-in": "sign-in.html", "/playground/login-complete": "login-complete.html", "/playground/bootstrap": "bootstrap.html" };
       const name = aliases[url.pathname] || url.pathname.slice("/playground/".length);
@@ -54,11 +58,12 @@ async function mount(t, options = {}) {
       return html(`<script>location.replace('${IDP}/login')</script>`);
     }
     if (url.origin === IDP && url.pathname === "/login") {
-      return html(`<h1>Cognito fixture</h1><button onclick="location.assign('${WEBUI}/oauth/oidc/callback')">Confirm sign-in</button>`);
+      return html(`<h1>Cognito fixture</h1><button onclick="location.assign('${WEBUI}/oauth/oidc/callback')">Confirm sign-in</button>`, options.isolatePopup ? { "cross-origin-opener-policy": "same-origin" } : {});
     }
     if (url.origin === WEBUI && url.pathname === "/oauth/oidc/callback") {
       await setSession("None", false);
-      return html('<script>location.replace("/auth")</script>');
+      const returnPath = headers.cookie?.includes("cyth_embed_login=1") ? "/playground/login-complete" : "/auth";
+      return html(`<script>location.replace('${returnPath}')</script>`);
     }
     if (url.origin === WEBUI && url.pathname === "/auth") {
       // Native /auth cannot bootstrap an HttpOnly token in a fresh partition.
@@ -241,4 +246,27 @@ test("a directly opened bootstrap document does not read a session or write a to
   await page.getByText("Open Playground to continue.").waitFor();
   assert.equal(await page.evaluate(() => localStorage.getItem("token")), null);
   assert.equal(calls.some(c => c.url === WEBUI + "/api/v1/auths/"), false);
+});
+
+
+test("the login window closes itself after a cross-origin opener policy severs its opener", async t => {
+  const { context, page, state, conversation, calls } = await mount(t, { isolatePopup: true });
+  const popup = await signIn(context, page);
+  if (!popup.isClosed()) await popup.waitForEvent("close", { timeout: 15000 });
+  await conversation().getByRole("button", { name: "Check scanner" }).waitFor({ timeout: 15000 });
+  assert.equal(state.completionWithoutOpener, true);
+  assert.equal(context.pages().length, 1);
+  assert.equal(page.url(), PLAYGROUND);
+  const callback = calls.find(c => c.url === WEBUI + "/oauth/oidc/callback");
+  assert.ok(callback.headers.cookie.includes("cyth_embed_login=1"));
+  assert.ok(calls.filter(c => !c.url.startsWith(WEBUI)).every(c => !c.headers.cookie?.includes("cyth_embed_login=")));
+  assert.equal((await context.cookies(WEBUI)).some(c => c.name === "cyth_embed_login"), false);
+});
+
+test("a completion page without a valid session cannot announce success or authenticate the embed", async t => {
+  const { page, calls } = await mount(t, { url: WEBUI + "/playground/login-complete" });
+  await page.getByText("Sign-in could not be confirmed. Please return and try again.").waitFor();
+  assert.equal(page.isClosed(), false);
+  assert.equal(await page.evaluate(() => localStorage.getItem("token")), null);
+  assert.ok(!calls.some(c => c.url === WEBUI + "/playground/bootstrap"));
 });
