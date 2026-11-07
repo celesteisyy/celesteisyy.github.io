@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
-      - run: node --check playground/webui.js
+      - run: node --check playground/embed.js
       - run: bash -n playground/deploy/install.sh
       - run: node --test playground/tests/csp.test.cjs
       - name: Nginx static route checks
