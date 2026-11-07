@@ -18,9 +18,9 @@ async function mount(t, options = {}) {
   const state = { blocked: false, status: null, toolCalls: 0 };
   context.on("page", p => p.on("pageerror", e => errors.push(e.message)));
   page.on("pageerror", e => errors.push(e.message));
-  async function setSession(sameSite = "None") {
+  async function setSession(sameSite = "None", httpOnly = true) {
     await context.addCookies([
-      { name: "token", value: "owner-fixture", url: WEBUI, secure: true, sameSite },
+      { name: "token", value: "owner-fixture", url: WEBUI, secure: true, sameSite, httpOnly },
       { name: "oauth_session_id", value: "server-session", url: WEBUI, secure: true, httpOnly: true, sameSite },
     ]);
   }
@@ -34,25 +34,32 @@ async function mount(t, options = {}) {
     const session = (!state.blocked || !embedded) && headers.cookie?.includes("token=owner-fixture");
     const html = body => route.fulfill({ contentType: "text/html", headers: { "content-security-policy": FRAME_CSP }, body });
     if ([WEBUI, SITE].includes(url.origin) && url.pathname.startsWith("/playground/")) {
-      const aliases = { "/playground/": "index.html", "/playground/embed/": "embed.html", "/playground/sign-in": "sign-in.html", "/playground/login-complete": "login-complete.html" };
+      const aliases = { "/playground/": "index.html", "/playground/embed/": "embed.html", "/playground/sign-in": "sign-in.html", "/playground/login-complete": "login-complete.html", "/playground/bootstrap": "bootstrap.html" };
       const name = aliases[url.pathname] || url.pathname.slice("/playground/".length);
-      if (!["index.html", "embed.html", "sign-in.html", "login-complete.html", "webui.css", "embed.js"].includes(name)) return route.fulfill({ status: 404, body: "missing" });
+      if (!["index.html", "embed.html", "sign-in.html", "login-complete.html", "bootstrap.html", "webui.css", "embed.js"].includes(name)) return route.fulfill({ status: 404, body: "missing" });
       return route.fulfill({ contentType: name.endsWith(".js") ? "application/javascript" : name.endsWith(".css") ? "text/css" : "text/html", headers: { "content-security-policy": FRAME_CSP }, body: fs.readFileSync(path.join(root, name)) });
     }
     if (url.origin === WEBUI && url.pathname === "/api/v1/auths/") {
-      return route.fulfill({ status: state.status || (session ? 200 : 401), contentType: "application/json", body: JSON.stringify(session ? { id: "owner" } : { detail: "Unauthorized" }) });
+      // Match v0.12.2: a successful auths check turns the cookie HttpOnly.
+      const bootstrap = request.frame().url() === WEBUI + "/playground/bootstrap";
+      const status = (bootstrap && options.bootstrapStatus) || state.status || (session ? 200 : 401);
+      return route.fulfill({ status, contentType: "application/json",
+        headers: status === 200 ? { "set-cookie": "token=owner-fixture; Path=/; Secure; HttpOnly; SameSite=None" } : {},
+        body: JSON.stringify(session ? { id: "owner", token: bootstrap && options.invalidBootstrap ? null : "owner-fixture" } : { detail: "Unauthorized" }) });
     }
     if (url.origin === WEBUI && url.pathname === "/oauth/oidc/login") {
       return html('<h1>Cognito fixture</h1><button onclick="location.assign(\'/oauth/oidc/callback\')">Confirm sign-in</button>');
     }
     if (url.origin === WEBUI && url.pathname === "/oauth/oidc/callback") {
-      await setSession();
+      await setSession("None", false);
       return html('<script>location.replace("/auth")</script>');
     }
     if (url.origin === WEBUI && url.pathname === "/auth") {
-      // Match the verified Open WebUI cookie bootstrap and existing return-path key.
-      return html(`<h1>Signing in</h1><script>
-        if (document.cookie.includes('token=owner-fixture')) {
+      // Native /auth cannot bootstrap an HttpOnly token in a fresh partition.
+      // Leave it on the real sign-in screen in that case, rather than making
+      // the test fixture more permissive than Open WebUI.
+      return html(`<h1>Sign in to Open WebUI</h1><script>
+        if (localStorage.token === 'owner-fixture' || document.cookie.includes('token=owner-fixture')) {
           localStorage.token='owner-fixture';
           const target=localStorage.getItem('redirectPath') || '/';
           localStorage.removeItem('redirectPath');
@@ -61,7 +68,7 @@ async function mount(t, options = {}) {
       </script>`);
     }
     if (url.origin === WEBUI && url.pathname === "/") {
-      return html(`<h1>Open WebUI fixture</h1><button id="tool">Check scanner</button><button id="logout">Sign out</button><p id="result"></p><script>
+      return html(`<script>if(localStorage.token!=='owner-fixture')location.replace('/auth');</script><h1>Open WebUI fixture</h1><button id="tool">Check scanner</button><button id="logout">Sign out</button><p id="result"></p><script>
         document.getElementById('tool').onclick=async()=>{
           const r=await fetch('/api/tool-fixture',{method:'POST',headers:{Authorization:'Bearer '+localStorage.token}});
           document.getElementById('result').textContent=String(r.status);
@@ -113,11 +120,16 @@ test("GitHub keeps its URL and public navigation; no query or credentials are fo
 
 test("popup OAuth returns to the embedded chat and tools keep session credentials on cyth", async t => {
   const { context, page, calls, errors, state, conversation } = await mount(t);
-  await signIn(context, page);
+  const popup = await signIn(context, page);
+  const closed = popup.isClosed() ? Promise.resolve() : popup.waitForEvent("close");
+  await closed;
   await conversation().getByRole("button", { name: "Check scanner" }).waitFor({ timeout: 15000 });
   await conversation().getByRole("button", { name: "Check scanner" }).click();
   await conversation().getByText("200", { exact: true }).waitFor();
   assert.equal(state.toolCalls, 1);
+  assert.equal(popup.isClosed(), true);
+  const authCookie = (await context.cookies(WEBUI)).find(c => c.name === "token");
+  assert.equal(authCookie.httpOnly, true);
   assert.equal(page.url(), PLAYGROUND);
   assert.equal(await page.evaluate(() => localStorage.getItem("token")), null);
   assert.equal(await page.evaluate(() => document.cookie.includes("owner-fixture")), false);
@@ -127,9 +139,11 @@ test("popup OAuth returns to the embedded chat and tools keep session credential
 });
 
 test("an existing None session opens in the iframe, while Lax does not authenticate the cross-site request", async t => {
-  const { page, conversation } = await mount(t, { authenticated: true });
+  const { page, conversation, context, helper } = await mount(t, { authenticated: true });
   await conversation().getByRole("button", { name: "Check scanner" }).waitFor({ timeout: 15000 });
   assert.equal(page.url(), PLAYGROUND);
+  assert.equal(await helper().evaluate(() => document.cookie.includes("owner-fixture")), false);
+  assert.equal((await context.cookies(WEBUI)).find(c => c.name === "token").httpOnly, true);
   const other = await mount(t, { authenticated: true, sameSite: "Lax" });
   await other.page.frameLocator("#webui").getByRole("button", { name: "Sign in", exact: true }).waitFor();
   assert.ok(other.calls.some(c => c.url === WEBUI + "/api/v1/auths/" && !c.headers.cookie?.includes("owner-fixture")));
@@ -190,4 +204,22 @@ test("foreign sites cannot run the embedded helper", async t => {
   const { calls } = await mount(t, { url: "https://evil.example/" });
   assert.ok(calls.some(c => c.url === WEBUI + "/playground/embed/"));
   assert.ok(!calls.some(c => c.url === WEBUI + "/api/v1/auths/"));
+});
+
+
+test("bootstrap rejects a missing token or rejected session without opening a conversation", async t => {
+  for (const options of [{ invalidBootstrap: true }, { bootstrapStatus: 401 }]) {
+    const { page, helper } = await mount(t, { authenticated: true, ...options });
+    await page.frameLocator("#webui").getByText("Your browser could not open sign-in here. Choose Continue, or open the full workspace.").waitFor({ timeout: 15000 });
+    assert.equal(await page.frameLocator("#webui").locator("#conversation").isVisible(), false);
+    assert.equal(await helper().evaluate(() => localStorage.getItem("token")), null);
+    assert.equal(await page.evaluate(() => localStorage.getItem("token")), null);
+  }
+});
+
+test("a directly opened bootstrap document does not read a session or write a token", async t => {
+  const { page, calls } = await mount(t, { authenticated: true, url: WEBUI + "/playground/bootstrap" });
+  await page.getByText("Open Playground to continue.").waitFor();
+  assert.equal(await page.evaluate(() => localStorage.getItem("token")), null);
+  assert.equal(calls.some(c => c.url === WEBUI + "/api/v1/auths/"), false);
 });

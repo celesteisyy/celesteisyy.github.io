@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { createHash } = require("node:crypto");
 const root = path.join(__dirname, "..");
-for (const name of ["index.html", "embed.html", "sign-in.html", "login-complete.html"]) {
+for (const name of ["index.html", "embed.html", "sign-in.html", "login-complete.html", "bootstrap.html"]) {
   const file = path.join(root, name);
   let html = fs.readFileSync(file, "utf8");
   const hashes = [];

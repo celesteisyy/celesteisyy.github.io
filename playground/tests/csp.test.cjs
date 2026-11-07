@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { createHash } = require("node:crypto");
 const root = path.join(__dirname, "..");
-for (const name of ["index.html", "embed.html", "sign-in.html", "login-complete.html"]) {
+for (const name of ["index.html", "embed.html", "sign-in.html", "login-complete.html", "bootstrap.html"]) {
   test(`${name}: exact script integrity, restricted frames, no external API access`, () => {
     const html = fs.readFileSync(path.join(root, name), "utf8");
     const match = html.match(/<meta http-equiv="Content-Security-Policy" content="([^"]+)"/);
