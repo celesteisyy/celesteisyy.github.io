@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="referrer" content="no-referrer" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cyssie Playground</title>
   <link rel="stylesheet" href="./style.css?v=20260726-5" />
@@ -31,7 +32,7 @@
 
         <div class="sidebar-actions">
           <button class="primary-btn" id="newChatButton" type="button">New chat</button>
-          <button id="tokenButton" type="button">Access token</button>
+          <button id="tokenButton" type="button">Sign in</button>
         </div>
 
         <div class="sessions" id="sessions"></div>
@@ -78,17 +79,19 @@
     </section>
   </main>
 
-  <div class="token-modal" id="tokenModal">
+  <div class="token-modal" id="tokenModal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
     <div class="modal-card">
-      <h2>Access token</h2>
-      <p>Enter your Cyssie access token. It will be saved only in this browser.</p>
-      <input id="tokenInput" type="password" placeholder="Bearer token" />
-      <button class="primary-btn" id="saveTokenButton" type="button">Save token</button>
+      <h2 id="authTitle">Sign in</h2>
+      <p id="authDescription" role="status" aria-live="polite">Connecting to Cyssie…</p>
+      <input id="tokenInput" type="password" placeholder="Bearer token" aria-label="Access token" hidden />
+      <button class="primary-btn" id="saveTokenButton" type="button" disabled>Connecting…</button>
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.7/dist/purify.min.js"></script>
-  <script src="app.js?v=20260726-4"></script>
+  <script src="vendor/marked-18.1.0.js"></script>
+  <script src="vendor/dompurify-3.4.16.js"></script>
+  <script src="vendor/oidc-client-ts-3.5.0.js"></script>
+  <script src="auth.js?v=20261008-1"></script>
+  <script src="app.js?v=20261008-1"></script>
 </body>
 </html>

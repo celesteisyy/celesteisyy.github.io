@@ -9,7 +9,6 @@ const STREAM_SAVE_INTERVAL_MS = 750;
 const SIDEBAR_COLLAPSED_KEY = "cyssie.sidebarCollapsed.v1";
 const MOBILE_SIDEBAR_BREAKPOINT = 860;
 
-let accessToken = "";
 let selectedImageFile = null;
 let sessions = [];
 let activeSessionId = null;
@@ -37,10 +36,6 @@ function saveSessions() {
   }
 }
 
-function getToken() {
-  return accessToken;
-}
-
 document.addEventListener("DOMContentLoaded", () => {
   const chat = document.getElementById("chat");
   const sessionsEl = document.getElementById("sessions");
@@ -54,6 +49,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const tokenModal = document.getElementById("tokenModal");
   const tokenInput = document.getElementById("tokenInput");
   const saveTokenButton = document.getElementById("saveTokenButton");
+  const authTitle = document.getElementById("authTitle");
+  const authDescription = document.getElementById("authDescription");
+  let authError = "";
+  let authFailed = false;
+  const auth = window.CyssieAuth.create(API_BASE, {
+    onChange: () => updateAuthUI(),
+    onError: (message) => { authError = message; openTokenModal(); }
+  });
   const activeTitle = document.getElementById("activeTitle");
   const workspace = document.querySelector(".workspace");
   const sidebarToggle = document.getElementById("sidebarToggle");
@@ -71,6 +74,8 @@ document.addEventListener("DOMContentLoaded", () => {
     tokenModal,
     tokenInput,
     saveTokenButton,
+    authTitle,
+    authDescription,
     activeTitle,
     workspace,
     sidebarToggle
@@ -120,7 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
   autoResizeInput();
   render();
 
-  if (!getToken()) {
+  if (!auth.hasSession()) {
     openTokenModal();
   }
 
@@ -331,9 +336,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function openTokenModal() {
-    tokenInput.value = getToken();
+    updateAuthUI();
     tokenModal.classList.add("visible");
-    setTimeout(() => tokenInput.focus(), 50);
+    setTimeout(() => (auth.mode === "legacy" ? tokenInput : saveTokenButton).focus(), 50);
   }
 
   function closeTokenModal() {
@@ -372,7 +377,7 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
-  async function prepareConversationContext(session, history, token) {
+  async function prepareConversationContext(session, history) {
     const recentStart = getRecentHistoryStart(history);
     const savedCount = Number.isInteger(session.summarizedMessageCount)
       ? session.summarizedMessageCount
@@ -389,11 +394,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (shouldCompact) {
       try {
-        const compactResponse = await fetch(`${API_BASE}/context/compact`, {
+        const compactResponse = await auth.fetch(`${API_BASE}/context/compact`, {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
+            "Content-Type": "application/json"
           },
           body: JSON.stringify({
             history: messagesToCompact,
@@ -510,7 +514,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function sendMessage(message, imageFile = null) {
-    if (!getToken()) {
+    if (!auth.hasSession()) {
       openTokenModal();
       return;
     }
@@ -528,7 +532,6 @@ document.addEventListener("DOMContentLoaded", () => {
     imageButton.disabled = true;
 
     try {
-      const token = getToken();
       let response;
 
       if (imageFile) {
@@ -536,25 +539,20 @@ document.addEventListener("DOMContentLoaded", () => {
         formData.append("message", message || "What is in this image?");
         formData.append("image", imageFile);
 
-        response = await fetch(`${API_BASE}/vision`, {
+        response = await auth.fetch(`${API_BASE}/vision`, {
           method: "POST",
-          headers: {
-            "Authorization": `Bearer ${token}`
-          },
           body: formData
         });
       } else {
         const preparedContext = await prepareConversationContext(
           session,
-          historyBeforeSend,
-          token
+          historyBeforeSend
         );
 
-        response = await fetch(`${API_BASE}/chat_stream`, {
+        response = await auth.fetch(`${API_BASE}/chat_stream`, {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
+            "Content-Type": "application/json"
           },
           body: JSON.stringify({
             message,
@@ -566,7 +564,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (response.status === 401) {
         openTokenModal();
-        throw new Error("Unauthorized. Please check your access token.");
+        throw new Error("Your session has expired. Please sign in again.");
       }
 
       if (!response.ok) {
@@ -587,7 +585,14 @@ document.addEventListener("DOMContentLoaded", () => {
         && loadingMessage.content !== "Cyssie is thinking..."
       ) ? loadingMessage.content : "";
 
-      loadingMessage.content = partialText
+      if (auth.isSignInError(error)) {
+        authError = error.message;
+        openTokenModal();
+      }
+
+      loadingMessage.content = auth.isSignInError(error)
+        ? error.message
+        : partialText
         ? `${partialText}\n\n[Cyssie's connection was interrupted before this answer finished.]`
         : "Cyssie's off to grab some coffee — come find her a little later!";
     } finally {
@@ -630,7 +635,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!message && !imageFile) return;
 
-    if (!getToken()) {
+    if (!auth.hasSession()) {
       openTokenModal();
       return;
     }
@@ -667,15 +672,10 @@ document.addEventListener("DOMContentLoaded", () => {
     saveSessions();
     render();
 
-    const token = getToken();
-
-    if (token) {
+    if (auth.hasSession()) {
       try {
-        await fetch(`${API_BASE}/reset`, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
+        await auth.fetch(`${API_BASE}/reset`, {
+          method: "POST"
         });
       } catch {
         // Reset failure should not block local session clearing.
@@ -700,27 +700,90 @@ document.addEventListener("DOMContentLoaded", () => {
     input.focus();
   });
 
-  tokenButton.addEventListener("click", (event) => {
+  tokenButton.addEventListener("click", async (event) => {
     event.preventDefault();
-    openTokenModal();
-  });
-
-  saveTokenButton.addEventListener("click", (event) => {
-    event.preventDefault();
-
-    const token = tokenInput.value.trim();
-
-    if (token) {
-      accessToken = token;
-      tokenInput.value = "";
+    if (auth.mode === "cognito" && auth.hasSession()) {
+      try { await auth.signOut(); } catch { authError = "Could not sign out. Please retry."; openTokenModal(); }
+    } else {
+      openTokenModal();
     }
-
-    closeTokenModal();
-    input.focus();
   });
+
+  saveTokenButton.addEventListener("click", async (event) => {
+    event.preventDefault();
+    if (auth.mode === "legacy" && !authFailed) {
+      const token = tokenInput.value.trim();
+      if (!token) return;
+      auth.setLegacyToken(token);
+      tokenInput.value = "";
+      closeTokenModal();
+      input.focus();
+      return;
+    }
+    saveTokenButton.disabled = true;
+    try {
+      if (authFailed || auth.mode === "loading") await initializeAuth();
+      else await auth.signIn();
+    } catch {
+      authError = "Could not open sign-in. Please retry.";
+    } finally {
+      updateAuthUI();
+    }
+  });
+
+  function updateAuthUI() {
+    tokenButton.textContent = auth.mode === "legacy" ? "Access token" : auth.hasSession() ? "Sign out" : "Sign in";
+    tokenInput.hidden = auth.mode !== "legacy" || authFailed;
+    authTitle.textContent = auth.mode === "legacy" && !authFailed ? "Access token" : "Sign in";
+    authDescription.textContent = authError || (auth.mode === "legacy"
+      ? "Enter your Cyssie access token. It stays in memory until this page closes."
+      : auth.mode === "loading" ? "Connecting to Cyssie…" : "Sign in with your Cyssie account to continue.");
+    saveTokenButton.textContent = authFailed ? "Retry" : auth.mode === "legacy" ? "Save token" : auth.mode === "loading" ? "Connecting…" : "Sign in";
+    saveTokenButton.disabled = auth.mode === "loading" && !authFailed;
+  }
+
+  async function initializeAuth() {
+    authError = "";
+    authFailed = false;
+    try {
+      await auth.initialize();
+      if (auth.hasSession()) closeTokenModal();
+      else openTokenModal();
+    } catch (error) {
+      authFailed = !auth.isSignInError(error);
+      authError = auth.isSignInError(error) ? error.message : "Could not connect to Cyssie. Please retry.";
+      openTokenModal();
+    }
+  }
+
+  // Download generated artifacts with authentication, without tokens in URLs.
+  chat.addEventListener("click", async (event) => {
+    const link = event.target.closest("a[href]");
+    if (!link) return;
+    const target = new URL(link.href, window.location.href);
+    if (target.origin !== new URL(API_BASE).origin || !/^\/(downloads\/|static\/generated\/)/.test(target.pathname)) return;
+    event.preventDefault();
+    try {
+      const response = await auth.fetch(target.href);
+      if (!response.ok) throw new Error("Download unavailable.");
+      const objectUrl = URL.createObjectURL(await response.blob());
+      const download = document.createElement("a");
+      download.href = objectUrl;
+      download.download = decodeURIComponent(target.pathname.split("/").pop()) || "cyssie-download";
+      document.body.appendChild(download);
+      download.click();
+      download.remove();
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+    } catch (error) {
+      authError = auth.isSignInError(error) ? error.message : "Could not download this file. Please try again.";
+      openTokenModal();
+    }
+  });
+
+  initializeAuth();
 
   tokenModal.addEventListener("click", (event) => {
-    if (event.target === tokenModal && getToken()) {
+    if (event.target === tokenModal && auth.hasSession()) {
       closeTokenModal();
     }
   });
@@ -732,3 +795,4 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
