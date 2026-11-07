@@ -6,6 +6,7 @@ const { chromium } = require("playwright");
 const root = path.join(__dirname, "..");
 const WEBUI = "https://cyth.18-118-248-231.sslip.io";
 const SITE = "https://celesteisyy.github.io";
+const IDP = "https://identity.example";
 const PLAYGROUND = SITE + "/playground/";
 const FRAME_CSP = "frame-ancestors 'self' " + SITE;
 
@@ -48,7 +49,10 @@ async function mount(t, options = {}) {
         body: JSON.stringify(session ? { id: "owner", token: bootstrap && options.invalidBootstrap ? null : "owner-fixture" } : { detail: "Unauthorized" }) });
     }
     if (url.origin === WEBUI && url.pathname === "/oauth/oidc/login") {
-      return html('<h1>Cognito fixture</h1><button onclick="location.assign(\'/oauth/oidc/callback\')">Confirm sign-in</button>');
+      return route.fulfill({ status: 302, headers: { location: IDP + "/login" }, body: "" });
+    }
+    if (url.origin === IDP && url.pathname === "/login") {
+      return html(`<h1>Cognito fixture</h1><button onclick="location.assign('${WEBUI}/oauth/oidc/callback')">Confirm sign-in</button>`);
     }
     if (url.origin === WEBUI && url.pathname === "/oauth/oidc/callback") {
       await setSession("None", false);
@@ -73,11 +77,15 @@ async function mount(t, options = {}) {
           const r=await fetch('/api/tool-fixture',{method:'POST',headers:{Authorization:'Bearer '+localStorage.token}});
           document.getElementById('result').textContent=String(r.status);
         };
-        document.getElementById('logout').onclick=()=>{
-          document.cookie='token=; Max-Age=0; path=/; Secure; SameSite=None';
+        document.getElementById('logout').onclick=async()=>{
+          await fetch('/api/v1/auths/signout',{method:'POST'});
           localStorage.removeItem('token'); location.assign('/auth');
         };
       </script>`);
+    }
+    if (url.origin === WEBUI && url.pathname === "/api/v1/auths/signout") {
+      return route.fulfill({ status: 200, contentType: "application/json",
+        headers: { "set-cookie": "token=; Path=/; Secure; HttpOnly; SameSite=None; Max-Age=0" }, body: "{}" });
     }
     if (url.origin === WEBUI && url.pathname === "/api/tool-fixture") {
       if (session && headers.authorization === "Bearer owner-fixture" && headers.origin === WEBUI && headers.cookie?.includes("oauth_session_id=server-session")) state.toolCalls++;
@@ -135,6 +143,8 @@ test("popup OAuth returns to the embedded chat and tools keep session credential
   assert.equal(await page.evaluate(() => document.cookie.includes("owner-fixture")), false);
   assert.ok(calls.filter(c => c.url.startsWith(SITE)).every(c => !c.headers.authorization && !c.headers.cookie?.includes("owner-fixture")));
   assert.ok(calls.some(c => c.url === WEBUI + "/oauth/oidc/login"));
+  assert.ok(calls.some(c => c.url === IDP + "/login"));
+  assert.ok(calls.filter(c => !c.url.startsWith(WEBUI)).every(c => !c.headers.authorization && !c.headers.cookie?.includes("owner-fixture")));
   assert.deepEqual(errors, []);
 });
 
@@ -155,6 +165,9 @@ test("sign-out returns to the embedded sign-in gate without navigating GitHub aw
   await conversation().getByRole("button", { name: "Sign out" }).click();
   await page.frameLocator("#webui").getByRole("button", { name: "Sign in", exact: true }).waitFor();
   assert.equal(page.url(), PLAYGROUND);
+  await page.reload();
+  await page.frameLocator("#webui").getByRole("button", { name: "Sign in", exact: true }).waitFor();
+  assert.equal(await page.frameLocator("#webui").locator("#conversation").isVisible(), false);
 });
 
 test("blocked embedded sessions stay unauthenticated and expose a permission/fallback action", async t => {
