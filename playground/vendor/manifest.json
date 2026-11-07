@@ -1,0 +1,23 @@
+[
+  {
+    "package": "oidc-client-ts",
+    "version": "3.5.0",
+    "source": "dist/browser/oidc-client-ts.min.js",
+    "sha256": "f999daa383f09eb090d0ae32211e9ca931c76840e08e47fcf334fc8f5f74f1ef",
+    "license": "Apache-2.0"
+  },
+  {
+    "package": "marked",
+    "version": "18.1.0",
+    "source": "lib/marked.umd.js",
+    "sha256": "f424dcb508fdf93e0137a970cfce8f3207ea2e3f37eca5f7556a52875683632a",
+    "license": "MIT"
+  },
+  {
+    "package": "dompurify",
+    "version": "3.4.16",
+    "source": "dist/purify.min.js",
+    "sha256": "2c90a9b46d6463f26038a29b686e82bc91de01fdac9d5229e7cfe3b360134ea2",
+    "license": "(MPL-2.0 OR Apache-2.0)"
+  }
+]
