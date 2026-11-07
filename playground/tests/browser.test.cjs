@@ -49,7 +49,9 @@ async function mount(t, options = {}) {
         body: JSON.stringify(session ? { id: "owner", token: bootstrap && options.invalidBootstrap ? null : "owner-fixture" } : { detail: "Unauthorized" }) });
     }
     if (url.origin === WEBUI && url.pathname === "/oauth/oidc/login") {
-      return route.fulfill({ status: 302, headers: { location: IDP + "/login" }, body: "" });
+      // A document navigation keeps both fake origins under route interception;
+      // a fulfilled redirect can otherwise escape interception to fake DNS.
+      return html(`<script>location.replace('${IDP}/login')</script>`);
     }
     if (url.origin === IDP && url.pathname === "/login") {
       return html(`<h1>Cognito fixture</h1><button onclick="location.assign('${WEBUI}/oauth/oidc/callback')">Confirm sign-in</button>`);
@@ -104,7 +106,11 @@ async function signIn(context, page) {
   const opened = context.waitForEvent("page");
   await page.frameLocator("#webui").getByRole("button", { name: "Sign in", exact: true }).click();
   const popup = await opened;
-  await popup.getByRole("button", { name: "Confirm sign-in" }).click();
+  try {
+    await popup.getByRole("button", { name: "Confirm sign-in" }).click({ timeout: 10000 });
+  } catch (error) {
+    throw new Error("Fixture sign-in did not load at " + popup.url() + ": " + await popup.locator("body").innerText(), { cause: error });
+  }
   return popup;
 }
 
