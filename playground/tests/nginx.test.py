@@ -33,7 +33,7 @@ class StaticRoutes(unittest.TestCase):
         cls.directory.chmod(0o755)
         static = cls.directory / "static"
         static.mkdir()
-        for name in ("index.html", "embed.html", "sign-in.html", "login-complete.html", "bootstrap.html", "embed.js", "navigation.js", "webui.css"):
+        for name in ("index.html", "embed.html", "sign-in.html", "login-complete.html", "bootstrap.html", "embed.js", "webui.css"):
             (static / name).write_text("fixture " + name)
         (static / "private.env").write_text("must not be served")
         snippet = (Path(__file__).parents[1] / "deploy/nginx.conf").read_text()
@@ -109,7 +109,7 @@ class StaticRoutes(unittest.TestCase):
         self.assertEqual(body, b"")
 
     def test_assets_are_exact_and_have_explicit_types(self):
-        for name, mime in (("embed.js", "application/javascript"), ("navigation.js", "application/javascript"), ("webui.css", "text/css")):
+        for name, mime in (("embed.js", "application/javascript"), ("webui.css", "text/css")):
             status, headers, body = self.get("/playground/" + name + "?v=test")
             self.assertEqual(status, 200)
             self.assertEqual(headers["Content-Type"], mime)

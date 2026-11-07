@@ -2,6 +2,48 @@
 
 (() => {
   const origin = "https://cyth.18-118-248-231.sslip.io";
+  if (document.body.dataset.mode === "navigation") {
+    const frame = document.getElementById("webui");
+    const navigation = document.getElementById("siteNavigation");
+    const menu = navigation?.querySelector("details");
+    if (!frame || !navigation) return;
+    let handshake = null;
+
+    function collapse(hidden) {
+      if (hidden && navigation.querySelector(":focus-visible")) return;
+      if (hidden && menu) menu.open = false;
+      navigation.inert = hidden;
+      document.body.classList.toggle("nav-collapsed", hidden);
+    }
+
+    function synchronize() {
+      collapse(false);
+      clearInterval(handshake);
+      let attempts = 0;
+      const ready = () => {
+        if (++attempts > 8) { clearInterval(handshake); return; }
+        frame.contentWindow?.postMessage({ type: "cyssie-navigation-ready" }, origin);
+      };
+      ready();
+      handshake = setInterval(ready, 250);
+    }
+
+    window.addEventListener("message", event => {
+      if (event.origin !== origin || event.source !== frame.contentWindow) return;
+      const data = event.data;
+      if (!data || data.type !== "cyssie-navigation" || typeof data.hidden !== "boolean") return;
+      clearInterval(handshake);
+      collapse(data.hidden);
+    });
+    window.addEventListener("keydown", event => {
+      if (event.key === "Tab") collapse(false);
+    }, true);
+    frame.addEventListener("load", synchronize);
+    window.addEventListener("pagehide", () => clearInterval(handshake));
+    synchronize();
+    return;
+  }
+
   const signIn = origin + "/playground/sign-in";
   const startConversation = "/playground/bootstrap";
   const status = document.getElementById("workspaceStatus");
