@@ -134,6 +134,10 @@ test("GitHub keeps its URL and public navigation; no query or credentials are fo
     { width: 320, height: 568 },
   ]) {
     await page.setViewportSize(viewport);
+    await page.locator('#siteNavigation').evaluate(async element => {
+      element.getBoundingClientRect();
+      await Promise.all(element.getAnimations().map(animation => animation.finished.catch(() => {})));
+    });
     const compact = viewport.width <= 640 || viewport.height <= 760;
     const menu = page.locator('.nav-menu');
     if (compact) {

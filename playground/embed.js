@@ -120,6 +120,7 @@
     removeScrollTracking();
     scrollDocument = doc;
     let activeUntil = 0;
+    const hideAfter = 128;
     let positions = new WeakMap();
     let touchY = null;
     const messages = target => {
@@ -132,7 +133,7 @@
       activeUntil = Date.now() + 700;
       positions.set(scroller, scroller.scrollTop);
       if (delta < -4) publishNavigation(false);
-      else if (delta > 4 && scroller.scrollTop > 72) publishNavigation(true);
+      else if (delta > 4 && scroller.scrollTop > hideAfter) publishNavigation(true);
     }
     const wheel = event => intent(messages(event.target), event.deltaY);
     const touchStart = event => { touchY = event.touches[0]?.clientY ?? null; };
@@ -148,7 +149,8 @@
       if (editable) return;
       const scroller = doc.getElementById("messages-container");
       if (["ArrowUp", "PageUp", "Home"].includes(event.key)) intent(scroller, -10);
-      else if (["ArrowDown", "PageDown", "End", " "].includes(event.key)) intent(scroller, 10);
+      else if (event.key === " ") intent(scroller, event.shiftKey ? -10 : 10);
+      else if (["ArrowDown", "PageDown", "End"].includes(event.key)) intent(scroller, 10);
     };
     const scroll = event => {
       const scroller = doc.getElementById("messages-container");
@@ -159,7 +161,7 @@
       if (y <= 16) { publishNavigation(false); return; }
       // Auto-scroll during model output is not a request to hide navigation.
       if (Date.now() > activeUntil) return;
-      if (y - previous > 8 && y > 72) publishNavigation(true);
+      if (y - previous > 8 && y > hideAfter) publishNavigation(true);
       else if (y - previous < -8) publishNavigation(false);
     };
     // Header transitions resize the conversation. Do not interpret the
