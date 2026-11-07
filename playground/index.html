@@ -2,27 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'none'; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; connect-src 'none'; frame-src https://cyth.18-118-248-231.sslip.io; img-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-kw7c/yQasg+zrZyHJEJsq5YogldlSkPjo5GziOXQSPk='; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; connect-src 'none'; frame-src https://cyth.18-118-248-231.sslip.io; img-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
   <meta name="referrer" content="no-referrer" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cyssie Playground</title>
-  <link rel="stylesheet" href="./webui.css?v=20261019-2" />
+  <link rel="stylesheet" href="./webui.css?v=20261107-2" />
 </head>
-<body>
-  <div class="nav-wrap">
+<body data-mode="navigation">
+  <div class="nav-wrap" id="siteNavigation">
+    <div class="nav-shell">
     <nav aria-label="Main navigation">
       <a class="brand" href="https://celesteisyy.github.io/playground/">Cyssie</a>
-      <div class="nav-links">
+      <div class="nav-links nav-links-desktop">
         <a class="nav-link" href="https://celesteisyy.github.io/">Home</a>
         <a class="nav-link" href="https://celesteisyy.github.io/blogs/">Blogs</a>
         <a class="nav-link" href="https://www.linkedin.com/in/yueying-huang/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
       </div>
+      <details class="nav-menu">
+        <summary>Menu</summary>
+        <div class="nav-links">
+          <a class="nav-link" href="https://celesteisyy.github.io/blogs/">Blogs</a>
+          <a class="nav-link" href="https://www.linkedin.com/in/yueying-huang/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+        </div>
+      </details>
     </nav>
+    </div>
   </div>
   <main class="container">
     <section class="workspace" aria-label="Cyssie workspace">
       <iframe id="webui" src="https://cyth.18-118-248-231.sslip.io/playground/embed/" title="Cyssie conversation" referrerpolicy="no-referrer" allow="clipboard-write; microphone; fullscreen; storage-access"></iframe>
     </section>
   </main>
+  <script src="./embed.js?v=20261107-2" integrity="sha256-kw7c/yQasg+zrZyHJEJsq5YogldlSkPjo5GziOXQSPk=" crossorigin="anonymous"></script>
 </body>
 </html>
