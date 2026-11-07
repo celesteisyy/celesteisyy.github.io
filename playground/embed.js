@@ -2,6 +2,48 @@
 
 (() => {
   const origin = "https://cyth.18-118-248-231.sslip.io";
+  if (document.body.dataset.mode === "navigation") {
+    const frame = document.getElementById("webui");
+    const navigation = document.getElementById("siteNavigation");
+    const menu = navigation?.querySelector("details");
+    if (!frame || !navigation) return;
+    let handshake = null;
+
+    function collapse(hidden) {
+      if (hidden && navigation.querySelector(":focus-visible")) return;
+      if (hidden && menu) menu.open = false;
+      navigation.inert = hidden;
+      document.body.classList.toggle("nav-collapsed", hidden);
+    }
+
+    function synchronize() {
+      collapse(false);
+      clearInterval(handshake);
+      let attempts = 0;
+      const ready = () => {
+        if (++attempts > 8) { clearInterval(handshake); return; }
+        frame.contentWindow?.postMessage({ type: "cyssie-navigation-ready" }, origin);
+      };
+      ready();
+      handshake = setInterval(ready, 250);
+    }
+
+    window.addEventListener("message", event => {
+      if (event.origin !== origin || event.source !== frame.contentWindow) return;
+      const data = event.data;
+      if (!data || data.type !== "cyssie-navigation" || typeof data.hidden !== "boolean") return;
+      clearInterval(handshake);
+      collapse(data.hidden);
+    });
+    window.addEventListener("keydown", event => {
+      if (event.key === "Tab") collapse(false);
+    }, true);
+    frame.addEventListener("load", synchronize);
+    window.addEventListener("pagehide", () => clearInterval(handshake));
+    synchronize();
+    return;
+  }
+
   const signIn = origin + "/playground/sign-in";
   const startConversation = "/playground/bootstrap";
   const status = document.getElementById("workspaceStatus");
@@ -92,9 +134,108 @@
   let signInCompleted = false;
   let booting = false;
   let bootStarted = 0;
+  let scrollDocument = null;
+  let scrollPath = "";
+  let removeScrollTracking = () => {};
+  let navigationParent = "";
+  let navigationHidden = false;
+
+  function publishNavigation(hidden) {
+    navigationHidden = hidden;
+    if (window.parent === window || !navigationParent) return;
+    // Only presentation state crosses the frame boundary: no chat text,
+    // URLs, identifiers, credentials, or scroll coordinates.
+    const message = { type: "cyssie-navigation", hidden };
+    window.parent.postMessage(message, navigationParent);
+  }
+
+  function trackConversationScroll(path) {
+    const doc = frame.contentDocument;
+    if (!doc) return;
+    const changed = path !== scrollPath;
+    if (changed) {
+      scrollPath = path;
+      publishNavigation(false);
+    }
+    if (!doc.getElementById("messages-container")) publishNavigation(false);
+    if (doc === scrollDocument && !changed) return;
+    removeScrollTracking();
+    scrollDocument = doc;
+    let activeUntil = 0;
+    const hideAfter = 128;
+    let positions = new WeakMap();
+    let touchY = null;
+    const messages = target => {
+      const scroller = doc.getElementById("messages-container");
+      return scroller && target instanceof doc.defaultView.Element && scroller.contains(target)
+        ? scroller : null;
+    };
+    function intent(scroller, delta) {
+      if (!scroller) return;
+      activeUntil = Date.now() + 700;
+      positions.set(scroller, scroller.scrollTop);
+      if (delta < -4) publishNavigation(false);
+      else if (delta > 4 && scroller.scrollTop > hideAfter) publishNavigation(true);
+    }
+    const wheel = event => intent(messages(event.target), event.deltaY);
+    const touchStart = event => { touchY = event.touches[0]?.clientY ?? null; };
+    const touchMove = event => {
+      const next = event.touches[0]?.clientY;
+      if (touchY !== null && typeof next === "number") intent(messages(event.target), touchY - next);
+      touchY = next ?? null;
+    };
+    const keydown = event => {
+      if (event.key === "Tab") { publishNavigation(false); return; }
+      const editable = event.target instanceof doc.defaultView.Element
+        && event.target.closest("input,textarea,select,[contenteditable]");
+      if (editable) return;
+      const scroller = doc.getElementById("messages-container");
+      if (["ArrowUp", "PageUp", "Home"].includes(event.key)) intent(scroller, -10);
+      else if (event.key === " ") intent(scroller, event.shiftKey ? -10 : 10);
+      else if (["ArrowDown", "PageDown", "End"].includes(event.key)) intent(scroller, 10);
+    };
+    const scroll = event => {
+      const scroller = doc.getElementById("messages-container");
+      if (!scroller || event.target !== scroller) return;
+      const y = Math.max(0, scroller.scrollTop);
+      const previous = positions.get(scroller) ?? y;
+      positions.set(scroller, y);
+      if (y <= 16) { publishNavigation(false); return; }
+      // Auto-scroll during model output is not a request to hide navigation.
+      if (Date.now() > activeUntil) return;
+      if (y - previous > 8 && y > hideAfter) publishNavigation(true);
+      else if (y - previous < -8) publishNavigation(false);
+    };
+    // Header transitions resize the conversation. Do not interpret the
+    // resulting scroll anchoring as a new user gesture or cause a hide/show loop.
+    const resize = () => { activeUntil = 0; positions = new WeakMap(); };
+    doc.addEventListener("wheel", wheel, { capture: true, passive: true });
+    doc.addEventListener("touchstart", touchStart, { capture: true, passive: true });
+    doc.addEventListener("touchmove", touchMove, { capture: true, passive: true });
+    doc.addEventListener("keydown", keydown, true);
+    doc.addEventListener("scroll", scroll, { capture: true, passive: true });
+    doc.defaultView.addEventListener("resize", resize);
+    const view = doc.defaultView;
+    removeScrollTracking = () => {
+      doc.removeEventListener("wheel", wheel, true);
+      doc.removeEventListener("touchstart", touchStart, true);
+      doc.removeEventListener("touchmove", touchMove, true);
+      doc.removeEventListener("keydown", keydown, true);
+      doc.removeEventListener("scroll", scroll, true);
+      try { view.removeEventListener("resize", resize); } catch {
+        // The frame may already have navigated to another origin. The gate
+        // must still be able to close it and show the sign-in/fallback notice.
+      }
+      scrollDocument = null;
+    };
+    publishNavigation(false);
+  }
 
   function stopPolling() { clearInterval(poll); poll = null; }
   function showNotice(text) {
+    removeScrollTracking();
+    scrollPath = "";
+    publishNavigation(false);
     clearInterval(monitor);
     monitor = null;
     frame.hidden = true;
@@ -126,6 +267,7 @@
       booting = false;
       notice.hidden = true;
       frame.hidden = false;
+      trackConversationScroll(url.pathname);
     } catch {
       showNotice("Sign in to wake Cyssie.");
     }
@@ -209,12 +351,19 @@
   });
 
   window.addEventListener("message", event => {
+    if (event.source === window.parent
+        && [origin, "https://celesteisyy.github.io"].includes(event.origin)
+        && event.data?.type === "cyssie-navigation-ready") {
+      navigationParent = event.origin;
+      publishNavigation(navigationHidden);
+      return;
+    }
     if (event.origin !== origin || !popup || event.source !== popup) return;
     if (!event.data || event.data.type !== "cyssie-signed-in") return;
     signInCompleted = true;
     checkSession(true);
   });
   frame.addEventListener("load", monitorConversation);
-  window.addEventListener("pagehide", () => { stopPolling(); clearInterval(monitor); });
+  window.addEventListener("pagehide", () => { stopPolling(); clearInterval(monitor); removeScrollTracking(); });
   checkSession();
 })();
