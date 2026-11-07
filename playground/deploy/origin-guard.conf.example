@@ -1,7 +1,8 @@
+# Reference template only. Replace example domains, paths and role names before use.
 # http{} context; declared maps have no effect on unrelated virtual hosts.
 map $http_origin $cyth_embed_origin_allowed {
     default 0;
-    "https://cyth.18-118-248-231.sslip.io" 1;
+    "https://chat.example.com" 1;
 }
 # Safe reads are public or authenticated by the application as before.
 # Every write, and every Upgrade request (including WebSocket), needs our origin.
@@ -17,6 +18,6 @@ map "$cyth_embed_sensitive_request:$cyth_embed_origin_allowed" $cyth_embed_rejec
 # The marker selects a fixed UI return page only; it is not authentication.
 # Match the exact OIDC callback path so ordinary WebUI logins retain /auth.
 map "$uri:$cookie_cyth_embed_login" $cyth_embed_login_return {
-    default "https://cyth.18-118-248-231.sslip.io/auth";
-    "/oauth/oidc/callback:1" "https://cyth.18-118-248-231.sslip.io/playground/login-complete";
+    default "https://chat.example.com/auth";
+    "/oauth/oidc/callback:1" "https://chat.example.com/playground/login-complete";
 }
