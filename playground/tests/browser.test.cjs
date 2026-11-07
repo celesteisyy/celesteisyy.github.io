@@ -30,7 +30,7 @@ async function mount(t, options = {}) {
     const url = new URL(request.url());
     const headers = await request.allHeaders();
     calls.push({ url: request.url(), headers, method: request.method() });
-    const embedded = request.frame().page() === page && new URL(page.url()).origin === SITE;
+    const embedded = !request.isNavigationRequest() && request.frame().page() === page && new URL(page.url()).origin === SITE;
     const session = (!state.blocked || !embedded) && headers.cookie?.includes("token=owner-fixture");
     const html = body => route.fulfill({ contentType: "text/html", headers: { "content-security-policy": FRAME_CSP }, body });
     if ([WEBUI, SITE].includes(url.origin) && url.pathname.startsWith("/playground/")) {
