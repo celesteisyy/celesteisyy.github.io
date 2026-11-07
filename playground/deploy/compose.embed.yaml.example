@@ -1,0 +1,23 @@
+# Reference template only. Replace example domains, paths and role names before use.
+# Apply after the base Compose configuration and any resource overlays.
+# Install/reload the Nginx origin guard BEFORE enabling cross-site cookies.
+services:
+  open-webui:
+    environment:
+      WEBUI_AUTH: "true"
+      ENABLE_SIGNUP: "false"
+      ENABLE_OAUTH_SIGNUP: "false"
+      ENABLE_LOGIN_FORM: "false"
+      ENABLE_OAUTH_PERSISTENT_CONFIG: "false"
+      ENABLE_OAUTH_ROLE_MANAGEMENT: "true"
+      OAUTH_ROLES_CLAIM: cognito:groups
+      OAUTH_ALLOWED_ROLES: YOUR_ALLOWED_GROUP
+      OAUTH_ADMIN_ROLES: YOUR_ALLOWED_GROUP
+      OAUTH_AUTO_REDIRECT: "false"
+      WEBUI_SESSION_COOKIE_SAME_SITE: lax
+      WEBUI_SESSION_COOKIE_SECURE: "true"
+      WEBUI_AUTH_COOKIE_SAME_SITE: "none"
+      WEBUI_AUTH_COOKIE_SECURE: "true"
+      # frame-ancestors evaluates every ancestor in the nested, trusted UI.
+      CONTENT_SECURITY_POLICY: "frame-ancestors 'self' https://site.example.com"
+      XFRAME_OPTIONS: ""
