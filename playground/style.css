@@ -60,8 +60,9 @@ a {
 }
 
 .nav-wrap {
-    position: relative;
-    z-index: 10;
+    position: sticky;
+    top: 0;
+    z-index: 210;
     padding: 14px 18px 0;
 }
 
@@ -628,6 +629,22 @@ textarea::placeholder {
 
 .token-modal.visible {
     display: flex;
+}
+
+.markdown-body .math-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-width: 100%;
+    padding: 0.25em 0;
+}
+
+.markdown-body .math-fallback {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.markdown-body .katex-display {
+    margin: 0.5em 0;
 }
 
 .modal-card {

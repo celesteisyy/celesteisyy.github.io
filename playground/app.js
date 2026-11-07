@@ -251,67 +251,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function escapeHtml(text) {
-    return String(text || "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
-  }
-
-  function isSafeRenderedUrl(value) {
-    try {
-      const url = new URL(value, window.location.href);
-      return ["http:", "https:", "mailto:"].includes(url.protocol);
-    } catch {
-      return false;
+  function renderBotMessage(element, content) {
+    if (window.CyssieMarkdown) {
+      window.CyssieMarkdown.render(element, content, { apiBase: API_BASE });
+    } else {
+      element.textContent = String(content || "");
     }
-  }
-
-  function renderMarkdown(content) {
-    const text = String(content || "");
-
-    if (window.marked && window.DOMPurify) {
-      marked.setOptions({
-        breaks: true,
-        gfm: true
-      });
-
-      const sanitized = DOMPurify.sanitize(marked.parse(text), {
-        USE_PROFILES: { html: true },
-        SANITIZE_NAMED_PROPS: true,
-        FORBID_TAGS: [
-          "style", "link", "meta", "base",
-          "img", "picture", "video", "audio", "source", "track",
-          "iframe", "object", "embed", "form", "input", "button",
-          "svg", "math", "image", "use"
-        ],
-        FORBID_ATTR: [
-          "style", "ping", "srcset", "poster", "formaction", "xlink:href"
-        ]
-      });
-      const template = document.createElement("template");
-      template.innerHTML = sanitized;
-
-      template.content.querySelectorAll("a").forEach((link) => {
-        const href = link.getAttribute("href") || "";
-        if (!isSafeRenderedUrl(href)) {
-          link.removeAttribute("href");
-          link.removeAttribute("target");
-          link.removeAttribute("rel");
-          return;
-        }
-        if (new URL(href, window.location.href).protocol !== "mailto:") {
-          link.target = "_blank";
-          link.rel = "noopener noreferrer";
-        }
-      });
-
-      return template.innerHTML;
-    }
-
-    return escapeHtml(text).replaceAll("\n", "<br>");
   }
 
   function renderMessages() {
@@ -327,7 +272,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (message.role === "bot") {
         div.classList.add("markdown-body");
-        div.innerHTML = renderMarkdown(message.content);
+        renderBotMessage(div, message.content);
       } else {
         div.textContent = message.content;
       }
@@ -340,12 +285,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function openTokenModal() {
     updateAuthUI();
+    workspace.inert = true;
     tokenModal.classList.add("visible");
     setTimeout(() => (auth.mode === "legacy" ? tokenInput : saveTokenButton).focus(), 50);
   }
 
   function closeTokenModal() {
     tokenModal.classList.remove("visible");
+    workspace.inert = false;
   }
 
   function buildHistoryForApi(session) {
@@ -488,7 +435,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (force) {
         messageElement.style.whiteSpace = "";
-        messageElement.innerHTML = renderMarkdown(loadingMessage.content);
+        renderBotMessage(messageElement, loadingMessage.content);
       } else {
         messageElement.style.whiteSpace = "pre-wrap";
         messageElement.textContent = loadingMessage.content;
@@ -798,4 +745,5 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
 
