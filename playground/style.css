@@ -801,3 +801,10 @@ textarea::placeholder {
         max-width: none;
     }
 }
+
+.download-status {
+    margin: 0;
+    padding: 10px 18px;
+    color: var(--danger);
+    border-bottom: 1px solid var(--border);
+}
