@@ -41,7 +41,7 @@ async function mount(t, options = {}) {
     if ([WEBUI, SITE].includes(url.origin) && url.pathname.startsWith("/playground/")) {
       const aliases = { "/playground/": "index.html", "/playground/embed/": "embed.html", "/playground/sign-in": "sign-in.html", "/playground/login-complete": "login-complete.html", "/playground/bootstrap": "bootstrap.html" };
       const name = aliases[url.pathname] || url.pathname.slice("/playground/".length);
-      if (!["index.html", "embed.html", "sign-in.html", "login-complete.html", "bootstrap.html", "webui.css", "embed.js"].includes(name)) return route.fulfill({ status: 404, body: "missing" });
+      if (!["index.html", "embed.html", "sign-in.html", "login-complete.html", "bootstrap.html", "webui.css", "embed.js", "navigation.js"].includes(name)) return route.fulfill({ status: 404, body: "missing" });
       return route.fulfill({ contentType: name.endsWith(".js") ? "application/javascript" : name.endsWith(".css") ? "text/css" : "text/html", headers: { "content-security-policy": FRAME_CSP }, body: fs.readFileSync(path.join(root, name)) });
     }
     if (url.origin === WEBUI && url.pathname === "/api/v1/auths/") {
@@ -79,7 +79,7 @@ async function mount(t, options = {}) {
       </script>`);
     }
     if (url.origin === WEBUI && url.pathname === "/") {
-      return html(`<script>if(localStorage.token!=='owner-fixture')location.replace('/auth');</script><h1>Open WebUI fixture</h1><button id="tool">Check scanner</button><button id="logout">Sign out</button><p id="result"></p><script>
+      return html(`<script>if(localStorage.token!=='owner-fixture')location.replace('/auth');</script><h1>Open WebUI fixture</h1><button id="tool">Check scanner</button><button id="logout">Sign out</button><p id="result"></p><div id="messages-container" tabindex="0" style="height:220px;overflow:auto"><div style="height:1800px">Conversation layout fixture</div></div><script>
         document.getElementById('tool').onclick=async()=>{
           const r=await fetch('/api/tool-fixture',{method:'POST',headers:{Authorization:'Bearer '+localStorage.token}});
           document.getElementById('result').textContent=String(r.status);
@@ -126,13 +126,40 @@ test("GitHub keeps its URL and public navigation; no query or credentials are fo
   assert.equal(new URL(page.url()).pathname, "/playground/");
   assert.ok(!calls.some(c => c.url.startsWith(WEBUI) && /private-|evil\.example/.test(c.url)));
   assert.ok(!calls.some(c => c.url.startsWith(SITE) && /\/api\//.test(c.url)));
-  for (const width of [1280, 390]) {
-    await page.setViewportSize({ width, height: 850 });
+  for (const viewport of [
+    { width: 1280, height: 850 },
+    { width: 1280, height: 720 },
+    { width: 1920, height: 480 },
+    { width: 390, height: 850 },
+    { width: 320, height: 568 },
+  ]) {
+    await page.setViewportSize(viewport);
+    const compact = viewport.width <= 640 || viewport.height <= 760;
+    const menu = page.locator('.nav-menu');
+    if (compact) {
+      assert.ok(await menu.isVisible());
+      const nav = await page.locator('nav').boundingBox();
+      assert.ok(nav.height <= 42);
+      const before = await page.locator('#webui').boundingBox();
+      await menu.locator('summary').focus();
+      await page.keyboard.press('Enter');
+      const after = await page.locator('#webui').boundingBox();
+      assert.deepEqual(after, before, 'Opening navigation must not shrink the conversation');
+    } else {
+      assert.equal(await menu.isVisible(), false);
+    }
     assert.equal(await page.getByRole("link", { name: "Home", exact: true }).getAttribute("href"), SITE + "/");
     assert.equal(await page.frameLocator("#webui").getByRole("link", { name: "Back to home", exact: true }).getAttribute("href"), SITE + "/");
     const box = await page.locator("#webui").boundingBox();
-    assert.ok(box.width > 300 && box.height > 500);
+    assert.ok(box.width >= viewport.width - 40);
+    assert.ok(box.height >= viewport.height - (compact ? 70 : 120));
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+    assert.ok(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight));
+    if (compact) {
+      await menu.locator('summary').focus();
+      await page.keyboard.press('Space');
+      assert.equal(await menu.getAttribute('open'), null);
+    }
   }
   assert.deepEqual(errors, []);
 });
@@ -157,6 +184,62 @@ test("popup OAuth returns to the embedded chat and tools keep session credential
   assert.ok(calls.some(c => c.url === IDP + "/login"));
   assert.ok(calls.filter(c => !c.url.startsWith(WEBUI)).every(c => !c.headers.authorization && !c.headers.cookie?.includes("owner-fixture")));
   assert.deepEqual(errors, []);
+});
+
+test("user scrolling hides and restores navigation without forwarding conversation data", async t => {
+  const { page, conversation, calls, errors } = await mount(t, { authenticated: true });
+  await conversation().getByRole('button', { name: 'Check scanner' }).waitFor();
+  const webui = page.frames().find(frame => frame.url() === WEBUI + '/');
+  await webui.waitForLoadState('load');
+  await page.evaluate(() => {
+    window.navigationMessages = [];
+    window.addEventListener('message', event => {
+      if (event.origin === 'https://cyth.18-118-248-231.sslip.io'
+          && event.source === document.getElementById('webui').contentWindow
+          && event.data?.type === 'cyssie-navigation') window.navigationMessages.push(event.data);
+    });
+  });
+  const scroller = conversation().locator('#messages-container');
+  const before = await page.locator('#webui').boundingBox();
+  await scroller.evaluate(element => { element.scrollTop = 300; });
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  assert.equal(await page.locator('body').evaluate(element => element.classList.contains('nav-collapsed')), false, 'Programmatic output scrolling must not hide navigation');
+  await scroller.hover();
+  await page.mouse.wheel(0, 250);
+  await page.waitForFunction(() => document.getElementById('siteNavigation').getBoundingClientRect().height < 1);
+  const expanded = await page.locator('#webui').boundingBox();
+  assert.ok(expanded.height > before.height + 70);
+  assert.equal(await page.locator('#siteNavigation').evaluate(element => element.inert), true);
+  await page.mouse.wheel(0, -90);
+  await page.waitForFunction(() => !document.body.classList.contains('nav-collapsed'));
+  await page.waitForFunction(() => document.getElementById('siteNavigation').getBoundingClientRect().height > 70);
+  assert.equal(await page.locator('#siteNavigation').evaluate(element => element.inert), false);
+  await page.mouse.wheel(0, 180);
+  await page.waitForFunction(() => document.body.classList.contains('nav-collapsed'));
+  await page.keyboard.press('Tab');
+  await page.waitForFunction(() => !document.body.classList.contains('nav-collapsed'));
+  const messages = await page.evaluate(() => window.navigationMessages);
+  assert.ok(messages.some(message => message.hidden === true));
+  for (const message of messages) {
+    assert.deepEqual(Object.keys(message).sort(), ['hidden', 'type']);
+    assert.equal(typeof message.hidden, 'boolean');
+  }
+  assert.ok(calls.filter(call => call.url.startsWith(SITE)).every(call => !call.headers.authorization && !call.headers.cookie?.includes('owner-fixture')));
+  assert.deepEqual(errors, []);
+});
+
+test("navigation ignores foreign origins, wrong windows and invalid payloads", async t => {
+  const { page } = await mount(t);
+  await page.frameLocator('#webui').getByRole('button', { name: 'Sign in', exact: true }).waitFor();
+  await page.evaluate(() => {
+    const frame = document.getElementById('webui');
+    for (const [origin, source, hidden] of [
+      ['https://evil.example', frame.contentWindow, true],
+      ['https://cyth.18-118-248-231.sslip.io', window, true],
+      ['https://cyth.18-118-248-231.sslip.io', frame.contentWindow, 'true'],
+    ]) window.dispatchEvent(new MessageEvent('message', { origin, source, data: { type: 'cyssie-navigation', hidden } }));
+  });
+  assert.equal(await page.locator('body').evaluate(element => element.classList.contains('nav-collapsed')), false);
 });
 
 test("an existing None session opens in the iframe, while Lax does not authenticate the cross-site request", async t => {

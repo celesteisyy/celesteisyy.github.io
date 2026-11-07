@@ -4,7 +4,24 @@ The public page stays at `https://celesteisyy.github.io/playground/` with the
 existing navigation. Its iframe opens a small sign-in helper on
 `https://cyth.18-118-248-231.sslip.io/playground/embed/`. The authenticated
 conversation inside that helper is Open WebUI, without a fork of its UI.
-The GitHub page has no JavaScript and makes no direct authenticated API calls.
+The GitHub page makes no direct API calls and never handles authentication
+credentials. Its only script controls the outer navigation using presentation
+messages from the exact embedded helper window and origin.
+
+At viewport widths up to 640px or heights up to 760px, the outer navigation
+automatically becomes a compact bar. Home, Blogs and LinkedIn remain available
+through a keyboard-accessible Menu disclosure. Its dropdown overlays the chat
+instead of reducing its height. Larger desktop windows keep the expanded links.
+During a conversation, scrolling down hides the outer navigation and gives its
+height back to the chat; scrolling up or back to the top restores it. Keyboard
+navigation restores the bar too. Wheel, touch and keyboard scrolling are
+observed only on WebUI v0.12.2's `messages-container`, so sidebar scrolling and
+automatic scrolling during model output do not hide the navigation. The helper
+reads no message content and sends only `{type: "cyssie-navigation", hidden}`.
+An exact-origin/window handshake selects either the cyth or GitHub parent; no
+wildcard target origins or credentials are used. Resize-induced scroll anchoring
+is ignored to prevent hide/show loops. The public page permits only its
+integrity-pinned navigation script and retains `connect-src 'none'`.
 
 ## Authentication and origins
 
