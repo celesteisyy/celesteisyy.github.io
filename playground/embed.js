@@ -180,7 +180,10 @@
       doc.removeEventListener("touchmove", touchMove, true);
       doc.removeEventListener("keydown", keydown, true);
       doc.removeEventListener("scroll", scroll, true);
-      view.removeEventListener("resize", resize);
+      try { view.removeEventListener("resize", resize); } catch {
+        // The frame may already have navigated to another origin. The gate
+        // must still be able to close it and show the sign-in/fallback notice.
+      }
       scrollDocument = null;
     };
     publishNavigation(false);
