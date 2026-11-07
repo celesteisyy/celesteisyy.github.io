@@ -18,7 +18,8 @@ async function mount(t, mode) {
   const context = await browser.newContext({ acceptDownloads: true });
   const page = await context.newPage();
   const calls = [], errors = [];
-  const state = { nonce: "", token: "access-test", refreshes: 0, revoked: 0, reject: false, reply: 'Hello **Cyssie**. ' + malicious };
+  const state = { nonce: "", token: "access-test", refreshes: 0, revoked: 0, reject: false, reply: 'Hello **Cyssie**. ' + malicious,
+    downloadStatus: 200, downloadAbort: false, downloadRedirect: false };
   page.on("pageerror", e => errors.push(e.message));
   await context.route("**/*", async route => {
     const req = route.request();
@@ -49,7 +50,14 @@ async function mount(t, mode) {
       if (url.pathname === "/auth/me") return json({ authenticated: true });
       if (url.pathname === "/chat_stream") return route.fulfill({ headers: cors, contentType: "text/plain", body: state.reply });
       if (url.pathname === "/vision") return json({ response: "Image received." });
-      if (url.pathname.startsWith("/downloads/")) return route.fulfill({ headers: cors, contentType: "application/vnd.jgraph.mxfile", body: "<mxfile/>" });
+      if (/^\/(?:downloads\/|static\/generated\/)/.test(url.pathname)) {
+        if (state.downloadAbort) return route.abort("failed");
+        if (state.downloadRedirect) return route.fulfill({ status: 302, headers: { ...cors, location: "https://evil.example/leak" } });
+        if (state.downloadStatus !== 200) return json({ detail: "<script>window.__attack=1</script>" }, state.downloadStatus);
+        const pptx = url.pathname.endsWith(".pptx");
+        return route.fulfill({ headers: cors, contentType: pptx ? "application/vnd.openxmlformats-officedocument.presentationml.presentation" : "application/octet-stream",
+          body: pptx ? "PK presentation fixture" : url.pathname.endsWith(".drawio") ? "<mxfile/>" : "Report fixture" });
+      }
       return json({ status: "reset" });
     }
     if (req.url() === `${ISSUER}/.well-known/openid-configuration`) return json({
@@ -93,6 +101,66 @@ async function send(page, text) {
   await page.locator("#sendButton").click();
   await page.waitForFunction(() => !document.querySelector("#sendButton").disabled);
 }
+
+async function signInCognito(page) {
+  await page.locator("#saveTokenButton").click();
+  await page.waitForURL(url => url.origin === HOSTED && url.pathname === "/oauth2/authorize");
+  const state = new URL(page.url()).searchParams.get("state");
+  await page.goto(CALLBACK + "?code=test-code&state=" + state);
+  await page.waitForFunction(() => document.querySelector("#tokenButton").textContent === "Sign out");
+}
+
+test("all artifact downloads carry authentication; ordinary failures preserve sign-in while 401 requires login", { timeout: 60000 }, async t => {
+  const { page, calls, state, errors } = await mount(t, "cognito");
+  await signInCognito(page);
+  const examples = [
+    ["/static/generated/slides.pptx", "/downloads/presentations/slides.pptx"],
+    ["/static/generated/layout.drawio", "/downloads/diagrams/layout.drawio"],
+    ["/downloads/presentations/direct.pptx", "/downloads/presentations/direct.pptx"],
+    ["/downloads/diagrams/direct.drawio", "/downloads/diagrams/direct.drawio"],
+    ["/static/generated/report.txt", "/static/generated/report.txt"]
+  ];
+  for (const [href, expected] of examples) {
+    state.reply = "[Artifact](" + href + ")";
+    await send(page, "prepare a file");
+    const started = page.waitForEvent("download");
+    await page.getByRole("link", { name: "Artifact", exact: true }).last().click();
+    assert.equal((await started).suggestedFilename(), expected.split("/").pop());
+    assert.ok(calls.some(c => c.url === API + expected && c.auth === "Bearer access-test"));
+  }
+  const link = page.getByRole("link", { name: "Artifact", exact: true }).last();
+  for (const status of [404, 410, 500, 503]) {
+    state.downloadStatus = status;
+    await link.click();
+    await page.locator("#downloadStatus").waitFor({ state: "visible" });
+    assert.match(await page.locator("#downloadStatus").innerText(), status < 500 ? /generate it again/ : /HTTP 50[03]/);
+    assert.equal(await page.locator("#tokenModal").isVisible(), false);
+    assert.equal(await page.locator("#tokenButton").innerText(), "Sign out");
+    assert.equal(await page.evaluate(() => window.__attack), undefined);
+  }
+  state.downloadStatus = 200;
+  state.downloadAbort = true;
+  await link.click();
+  await page.locator("#downloadStatus").waitFor({ state: "visible" });
+  assert.match(await page.locator("#downloadStatus").innerText(), /Download interrupted/);
+  assert.equal(await page.locator("#tokenModal").isVisible(), false);
+  state.downloadAbort = false;
+  state.downloadRedirect = true;
+  await link.click();
+  await page.locator("#downloadStatus").waitFor({ state: "visible" });
+  assert.equal(await page.locator("#tokenButton").innerText(), "Sign out");
+  assert.ok(!calls.some(c => c.url.startsWith("https://evil.example/")));
+  state.downloadRedirect = false;
+  state.reply = "Still signed in.";
+  await send(page, "continue chatting");
+  assert.match(await page.locator("#chat").innerText(), /Still signed in/);
+  state.downloadStatus = 401;
+  await link.click();
+  await page.locator("#tokenModal").waitFor({ state: "visible" });
+  assert.match(await page.locator("#authDescription").innerText(), /sign in again/);
+  assert.equal(await page.locator("#tokenButton").innerText(), "Sign in");
+  assert.deepEqual(errors, []);
+});
 
 test("LaTeX renders after chat and reload with strict CSP; code, currency and hostile input stay safe", { timeout: 60000 }, async t => {
   const { page, calls, errors, state } = await mount(t, "legacy");
