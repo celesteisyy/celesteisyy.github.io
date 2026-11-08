@@ -10,7 +10,6 @@
     let handshake = null;
 
     function collapse(hidden) {
-      if (hidden && navigation.querySelector(":focus-visible")) return;
       if (hidden && menu) menu.open = false;
       navigation.inert = hidden;
       document.body.classList.toggle("nav-collapsed", hidden);
@@ -152,12 +151,13 @@
   function trackConversationScroll(path) {
     const doc = frame.contentDocument;
     if (!doc) return;
+    const selector = '[id="messages-container"], [id^="messages-container-"], #chat-pane';
     const changed = path !== scrollPath;
     if (changed) {
       scrollPath = path;
       publishNavigation(false);
     }
-    if (!doc.getElementById("messages-container")) publishNavigation(false);
+    if (!doc.querySelector(selector)) publishNavigation(false);
     if (doc === scrollDocument && !changed) return;
     removeScrollTracking();
     scrollDocument = doc;
@@ -165,17 +165,43 @@
     const hideAfter = 128;
     let positions = new WeakMap();
     let touchY = null;
+    let activeScroller = null;
+    let pointerScroller = null;
+    let pointerUntil = 0;
+    let gestureDirection = 0;
+    let gestureDistance = 0;
     const messages = target => {
-      const scroller = doc.getElementById("messages-container");
-      return scroller && target instanceof doc.defaultView.Element && scroller.contains(target)
-        ? scroller : null;
+      return target instanceof doc.defaultView.Element ? target.closest(selector) : null;
     };
+    function remember(scroller) {
+      if (scroller !== activeScroller || Date.now() > activeUntil) {
+        positions = new WeakMap();
+        gestureDistance = 0;
+      }
+      activeScroller = scroller;
+      activeUntil = Date.now() + 700;
+      for (let node = scroller; node; node = node.parentElement) {
+        if (!positions.has(node)) positions.set(node, Math.max(0, node.scrollTop));
+      }
+    }
+    function canScroll(scroller) {
+      for (let node = scroller; node; node = node.parentElement) {
+        if (node.scrollHeight > node.clientHeight + 16) return true;
+      }
+      return false;
+    }
     function intent(scroller, delta) {
       if (!scroller) return;
-      activeUntil = Date.now() + 700;
-      positions.set(scroller, scroller.scrollTop);
-      if (delta < -4) publishNavigation(false);
-      else if (delta > 4 && scroller.scrollTop > hideAfter) publishNavigation(true);
+      remember(scroller);
+      if (!delta) return;
+      const direction = Math.sign(delta);
+      if (direction !== gestureDirection) gestureDistance = 0;
+      gestureDirection = direction;
+      gestureDistance += Math.abs(delta);
+      if (gestureDistance < 8) return;
+      gestureDistance = 0;
+      if (direction < 0) publishNavigation(false);
+      else if (canScroll(scroller)) publishNavigation(true);
     }
     const wheel = event => intent(messages(event.target), event.deltaY);
     const touchStart = event => { touchY = event.touches[0]?.clientY ?? null; };
@@ -187,32 +213,54 @@
     const keydown = event => {
       if (event.key === "Tab") { publishNavigation(false); return; }
       const editable = event.target instanceof doc.defaultView.Element
-        && event.target.closest("input,textarea,select,[contenteditable]");
+        && event.target.closest("input,textarea,select,button,a,[contenteditable]");
       if (editable) return;
-      const scroller = doc.getElementById("messages-container");
+      const scroller = messages(event.target) || [...doc.querySelectorAll(selector)]
+        .find(element => element.getClientRects().length && canScroll(element));
       if (["ArrowUp", "PageUp", "Home"].includes(event.key)) intent(scroller, -10);
       else if (event.key === " ") intent(scroller, event.shiftKey ? -10 : 10);
       else if (["ArrowDown", "PageDown", "End"].includes(event.key)) intent(scroller, 10);
     };
+    const pointerDown = event => {
+      const scroller = messages(event.target);
+      if (event.button !== 0 || event.target !== scroller) return;
+      pointerScroller = scroller;
+      remember(scroller);
+      pointerUntil = Date.now() + 700;
+    };
+    const pointerMove = event => {
+      if (pointerScroller && (event.buttons & 1)) {
+        remember(pointerScroller);
+        pointerUntil = Date.now() + 700;
+      }
+    };
+    const pointerUp = () => { pointerScroller = null; };
     const scroll = event => {
-      const scroller = doc.getElementById("messages-container");
-      if (!scroller || event.target !== scroller) return;
+      const scroller = event.target === doc ? doc.scrollingElement : event.target;
+      if (!(scroller instanceof doc.defaultView.Element)) return;
+      if (!scroller.matches(selector)) return;
       const y = Math.max(0, scroller.scrollTop);
       const previous = positions.get(scroller) ?? y;
+      if (y <= 1) { publishNavigation(false); return; }
+      // Wheel/touch/keyboard intent is handled above. Only infer direction
+      // here for scrollbar gestures, never for model output or viewport anchoring.
+      if (Date.now() > pointerUntil) return;
+      if (Math.abs(y - previous) < 8) return;
       positions.set(scroller, y);
-      if (y <= 16) { publishNavigation(false); return; }
-      // Auto-scroll during model output is not a request to hide navigation.
-      if (Date.now() > activeUntil) return;
       if (y - previous > 8 && y > hideAfter) publishNavigation(true);
       else if (y - previous < -8) publishNavigation(false);
     };
     // Header transitions resize the conversation. Do not interpret the
     // resulting scroll anchoring as a new user gesture or cause a hide/show loop.
-    const resize = () => { activeUntil = 0; positions = new WeakMap(); };
+    const resize = () => { activeUntil = 0; pointerUntil = 0; positions = new WeakMap(); };
     doc.addEventListener("wheel", wheel, { capture: true, passive: true });
     doc.addEventListener("touchstart", touchStart, { capture: true, passive: true });
     doc.addEventListener("touchmove", touchMove, { capture: true, passive: true });
     doc.addEventListener("keydown", keydown, true);
+    doc.addEventListener("pointerdown", pointerDown, true);
+    doc.addEventListener("pointermove", pointerMove, true);
+    doc.addEventListener("pointerup", pointerUp, true);
+    doc.addEventListener("pointercancel", pointerUp, true);
     doc.addEventListener("scroll", scroll, { capture: true, passive: true });
     doc.defaultView.addEventListener("resize", resize);
     const view = doc.defaultView;
@@ -221,6 +269,10 @@
       doc.removeEventListener("touchstart", touchStart, true);
       doc.removeEventListener("touchmove", touchMove, true);
       doc.removeEventListener("keydown", keydown, true);
+      doc.removeEventListener("pointerdown", pointerDown, true);
+      doc.removeEventListener("pointermove", pointerMove, true);
+      doc.removeEventListener("pointerup", pointerUp, true);
+      doc.removeEventListener("pointercancel", pointerUp, true);
       doc.removeEventListener("scroll", scroll, true);
       try { view.removeEventListener("resize", resize); } catch {
         // The frame may already have navigated to another origin. The gate
